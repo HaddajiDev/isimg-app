@@ -1,0 +1,226 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
+import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/core/credential_store.dart';
+import 'package:isimg_app/models/grades.dart';
+import 'package:isimg_app/models/profile.dart';
+import 'package:isimg_app/models/schedule.dart';
+import 'package:isimg_app/providers/api_provider.dart';
+import 'package:isimg_app/providers/auth_provider.dart';
+
+/// In-memory stand-in so tests never touch a real keystore.
+class FakeCredentialStore extends CredentialStore {
+  Credentials? stored;
+  int saveCount = 0;
+  int clearCount = 0;
+
+  @override
+  Future<Credentials?> read() async => stored;
+
+  @override
+  Future<bool> hasCredentials() async => stored != null;
+
+  @override
+  Future<void> save(Credentials credentials) async {
+    stored = credentials;
+    saveCount++;
+  }
+
+  @override
+  Future<void> clear() async {
+    stored = null;
+    clearCount++;
+  }
+}
+
+class ScriptedApi implements ApiClient {
+  /// Queue of outcomes; each login consumes one.
+  final List<Object> outcomes;
+  final List<(String, String)> attempts = [];
+
+  ScriptedApi(this.outcomes);
+
+  @override
+  Future<LoginResult> login(String username, String password) async {
+    attempts.add((username, password));
+    final next = outcomes.isEmpty ? Exception('no more outcomes') : outcomes.removeAt(0);
+    if (next is LoginResult) return next;
+    throw next;
+  }
+
+  @override
+  Future<void> verifyOtp({required String session, required String token2fa, required String code}) async {}
+
+  @override
+  Future<Grades> getGrades({String? au, String? ss}) async =>
+      Grades.fromJson({'semesters': <dynamic>[]});
+
+  @override
+  Future<Profile> getProfile() async =>
+      Profile.fromJson({'years': <dynamic>[]});
+
+  @override
+  Future<Schedule> getSchedule({String? week}) async =>
+      Schedule.fromJson({'hasSessions': false});
+}
+
+ProviderContainer makeContainer(ScriptedApi api, FakeCredentialStore store) {
+  final container = ProviderContainer(
+    overrides: [
+      apiClientProvider.overrideWithValue(api),
+      credentialStoreProvider.overrideWithValue(store),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
+
+/// Waits for the notifier to settle out of its transient states.
+Future<AuthState> settle(ProviderContainer container) async {
+  for (var i = 0; i < 40; i++) {
+    await Future<void>.delayed(Duration.zero);
+    final state = container.read(authProvider);
+    if (state.status != AuthStatus.checking && state.status != AuthStatus.submitting) {
+      return state;
+    }
+  }
+  return container.read(authProvider);
+}
+
+void main() {
+  setUp(() {
+    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform({});
+  });
+
+  test('credentials are saved only when "remember me" is ticked', () async {
+    final store = FakeCredentialStore();
+    final container = makeContainer(ScriptedApi([LoginOk()]), store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).login('2024666', 'pw', rememberMe: false);
+
+    expect(store.stored, isNull);
+    expect(store.saveCount, 0);
+  });
+
+  test('ticking "remember me" stores them after a successful login', () async {
+    final store = FakeCredentialStore();
+    final container = makeContainer(ScriptedApi([LoginOk()]), store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).login('2024666', 'pw', rememberMe: true);
+
+    expect(store.stored?.username, '2024666');
+    expect(store.stored?.password, 'pw');
+  });
+
+  test('a rejected login stores nothing', () async {
+    final store = FakeCredentialStore();
+    final container = makeContainer(ScriptedApi([Exception('bad creds')]), store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).login('2024666', 'wrong', rememberMe: true);
+
+    expect(store.stored, isNull);
+    expect(container.read(authProvider).status, AuthStatus.unauthenticated);
+  });
+
+  test('credentials are withheld until an OTP login actually completes', () async {
+    final store = FakeCredentialStore();
+    final api = ScriptedApi([LoginOtpRequired(session: 'sess', token2fa: 'tok')]);
+    final container = makeContainer(api, store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).login('2024666', 'pw', rememberMe: true);
+    expect(container.read(authProvider).status, AuthStatus.otpPending);
+    // Not proven yet, so nothing is written.
+    expect(store.stored, isNull);
+
+    await container.read(authProvider.notifier).verifyOtp('123456');
+    expect(container.read(authProvider).status, AuthStatus.authenticated);
+    expect(store.stored?.password, 'pw');
+  });
+
+  test('a stored login signs the student in at startup', () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'pw');
+    final api = ScriptedApi([LoginOk()]);
+    final container = makeContainer(api, store);
+
+    final state = await settle(container);
+
+    expect(state.status, AuthStatus.authenticated);
+    // The stored credentials were actually replayed, not just assumed valid.
+    expect(api.attempts, [('2024666', 'pw')]);
+  });
+
+  test('startup falls back to the login screen when nothing is stored', () async {
+    final container = makeContainer(ScriptedApi([]), FakeCredentialStore());
+    expect((await settle(container)).status, AuthStatus.unauthenticated);
+  });
+
+  test('an expired session is renewed silently', () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'pw');
+    // First login at startup, second when the session lapses.
+    final api = ScriptedApi([LoginOk(), LoginOk()]);
+    final container = makeContainer(api, store);
+    await settle(container);
+    final before = container.read(authProvider).sessionGeneration;
+
+    await container.read(authProvider.notifier).handleSessionExpired();
+
+    final state = container.read(authProvider);
+    expect(state.status, AuthStatus.authenticated);
+    // A second login ran and produced a new session, which is what makes the
+    // dependent providers refetch rather than serving the stale error.
+    expect(api.attempts.length, 2);
+    expect(state.sessionGeneration, greaterThan(before));
+    // Still remembered, so the next lapse recovers too.
+    expect(store.stored, isNotNull);
+  });
+
+  test('expiry falls back to the login screen when the password no longer works',
+      () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'old-pw');
+    final api = ScriptedApi([LoginOk(), Exception('password changed')]);
+    final container = makeContainer(api, store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).handleSessionExpired();
+
+    expect(container.read(authProvider).status, AuthStatus.unauthenticated);
+    // Logging out clears them, so the app cannot loop on a dead password.
+    expect(store.stored, isNull);
+  });
+
+  test('expiry cannot be recovered unattended when a new OTP is demanded', () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'pw');
+    final api = ScriptedApi([LoginOk(), LoginOtpRequired(session: 'sess', token2fa: 'tok')]);
+    final container = makeContainer(api, store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).handleSessionExpired();
+
+    // A code cannot be typed by the app, so the student is asked to sign in.
+    expect(container.read(authProvider).status, AuthStatus.unauthenticated);
+  });
+
+  test('signing out forgets the stored login', () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'pw');
+    final container = makeContainer(ScriptedApi([LoginOk()]), store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).logout();
+
+    expect(store.stored, isNull);
+    expect(store.clearCount, greaterThan(0));
+    expect(container.read(authProvider).status, AuthStatus.unauthenticated);
+  });
+}
