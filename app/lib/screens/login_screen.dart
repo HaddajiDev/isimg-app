@@ -53,27 +53,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // The artwork carries its own dark background and glow, so
+                    // it needs no container behind it on this canvas.
                     Center(
-                      child: Container(
-                        height: 68,
-                        width: 68,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.purple, AppColors.purpleDeep],
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.purple.withValues(alpha: 0.35),
-                              blurRadius: 28,
-                              spreadRadius: -4,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.school_rounded, size: 34, color: Colors.white),
+                      child: Image.asset(
+                        'assets/logo.png',
+                        height: 148,
+                        width: 148,
+                        filterQuality: FilterQuality.medium,
+                        semanticLabel: 'ISIMG',
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
                       'ISIMG',
                       textAlign: TextAlign.center,
