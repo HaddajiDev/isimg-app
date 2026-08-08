@@ -37,12 +37,13 @@ dependencies:
   flutter_riverpod: ^2.6.1
   dio: ^5.11.0
   flutter_secure_storage: ^11.0.0
-  intl: ^0.20.3
   google_fonts: ^8.2.1
   flutter_svg: ^2.3.0
   shared_preferences: ^2.5.5
   html: ^0.15.6
   http: ^1.6.0
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

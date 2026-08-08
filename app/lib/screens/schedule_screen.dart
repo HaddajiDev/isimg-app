@@ -17,6 +17,8 @@ class ScheduleScreen extends ConsumerWidget {
     return Column(
       children: [
         const _WeekNavigator(),
+        if (scheduleAsync.valueOrNull?.capturedAt case final capturedAt?)
+          _OfflineBanner(capturedAt: capturedAt),
         Expanded(
           child: scheduleAsync.when(
             loading: () => const _ScheduleSkeleton(),
@@ -26,10 +28,15 @@ class ScheduleScreen extends ConsumerWidget {
                   ref.read(authProvider.notifier).handleSessionExpired();
                 });
               }
+              final offline = error is ApiException && error.isConnectivityProblem;
               return MessageView(
-                icon: Icons.cloud_off_rounded,
-                title: 'Impossible de charger l\'emploi',
-                subtitle: error is ApiException ? error.code : 'Vérifiez votre connexion.',
+                icon: offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+                title: offline
+                    ? 'Pas de connexion'
+                    : 'Impossible de charger l\'emploi',
+                subtitle: offline
+                    ? 'Cette semaine n\'a pas encore été enregistrée hors ligne.'
+                    : (error is ApiException ? error.code : 'Vérifiez votre connexion.'),
                 tint: AppColors.danger,
                 action: FilledButton(
                   onPressed: () => ref.invalidate(scheduleProvider),
@@ -37,8 +44,8 @@ class ScheduleScreen extends ConsumerWidget {
                 ),
               );
             },
-            data: (schedule) {
-              if (!schedule.hasSessions) {
+            data: (view) {
+              if (!view.schedule.hasSessions) {
                 return const MessageView(
                   icon: Icons.event_available_rounded,
                   title: 'Aucun cours cette semaine',
@@ -89,16 +96,64 @@ class ScheduleScreen extends ConsumerWidget {
   }
 }
 
+/// Tells the student they are looking at a saved copy, and how old it is.
+class _OfflineBanner extends StatelessWidget {
+  final DateTime capturedAt;
+
+  const _OfflineBanner({required this.capturedAt});
+
+  String get _age {
+    final elapsed = DateTime.now().difference(capturedAt);
+    if (elapsed.inMinutes < 1) return 'à l\'instant';
+    if (elapsed.inMinutes < 60) return 'il y a ${elapsed.inMinutes} min';
+    if (elapsed.inHours < 24) return 'il y a ${elapsed.inHours} h';
+    return 'il y a ${elapsed.inDays} j';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off_rounded, size: 15, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Hors ligne — copie enregistrée $_age',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _WeekNavigator extends ConsumerWidget {
   const _WeekNavigator();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(scheduleProvider);
+    final selectedWeek = ref.watch(selectedWeekProvider);
     final label = scheduleAsync.maybeWhen(
-      data: (schedule) => schedule.weekLabel,
+      data: (view) => view.schedule.weekLabel,
       orElse: () => null,
     );
+    final isCurrentWeek = selectedWeek == mondayOf(DateTime.now());
 
     return Container(
       margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
@@ -110,7 +165,7 @@ class _WeekNavigator extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          _NavArrow(
+          _NavButton(
             icon: Icons.chevron_left_rounded,
             tooltip: 'Semaine précédente',
             onPressed: () => goToPreviousWeek(ref),
@@ -123,25 +178,32 @@ class _WeekNavigator extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    label ?? '—',
+                    label ?? formatWeek(selectedWeek),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                   Text(
-                    'Appuyez pour revenir à aujourd\'hui',
+                    isCurrentWeek
+                        ? 'Semaine en cours'
+                        : 'Appuyez pour revenir à aujourd\'hui',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textMuted, fontSize: 11),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isCurrentWeek ? AppColors.green : AppColors.textMuted,
+                          fontSize: 11,
+                        ),
                   ),
                 ],
               ),
             ),
           ),
-          _NavArrow(
+          _NavButton(
+            icon: Icons.calendar_month_rounded,
+            tooltip: 'Choisir une semaine',
+            onPressed: () => _pickWeek(context, ref, selectedWeek),
+          ),
+          _NavButton(
             icon: Icons.chevron_right_rounded,
             tooltip: 'Semaine suivante',
             onPressed: () => goToNextWeek(ref),
@@ -150,22 +212,38 @@ class _WeekNavigator extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _pickWeek(BuildContext context, WidgetRef ref, DateTime current) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      // Wide enough to cover any année the student can select elsewhere.
+      firstDate: DateTime(now.year - 6),
+      lastDate: DateTime(now.year + 2, 12, 31),
+      helpText: 'Choisir une semaine',
+      // Any day in the week is fine; it snaps to the Monday.
+      fieldHintText: 'jj/mm/aaaa',
+    );
+    if (picked == null) return;
+    goToWeekOf(ref, picked);
+  }
 }
 
-class _NavArrow extends StatelessWidget {
+class _NavButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
 
-  const _NavArrow({required this.icon, required this.tooltip, required this.onPressed});
+  const _NavButton({required this.icon, required this.tooltip, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onPressed,
-      icon: Icon(icon),
+      icon: Icon(icon, size: 20),
       tooltip: tooltip,
-      // Icon-only control: tooltip doubles as the accessibility label.
+      // Icon-only control: the tooltip doubles as its accessibility label.
       style: IconButton.styleFrom(
         backgroundColor: AppColors.surfaceRaised,
         foregroundColor: AppColors.textPrimary,

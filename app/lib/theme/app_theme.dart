@@ -204,6 +204,24 @@ ThemeData buildAppTheme() {
         ),
       ),
     ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: AppColors.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      headerBackgroundColor: AppColors.purpleDeep,
+      headerForegroundColor: Colors.white,
+      todayBorder: const BorderSide(color: AppColors.purple, width: 1.5),
+      todayForegroundColor: const WidgetStatePropertyAll(AppColors.purple),
+      dayForegroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? Colors.white
+            : AppColors.textPrimary,
+      ),
+      dayBackgroundColor: WidgetStateProperty.resolveWith(
+        (states) =>
+            states.contains(WidgetState.selected) ? AppColors.purple : Colors.transparent,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+    ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.surfaceRaised,
       contentTextStyle: TextStyle(color: AppColors.textPrimary, fontFamily: bodyFont),

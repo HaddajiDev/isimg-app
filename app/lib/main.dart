@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
@@ -28,6 +29,16 @@ class IsimgApp extends StatelessWidget {
     return MaterialApp(
       title: 'ISIMG',
       debugShowCheckedModeBanner: false,
+      // The interface is French throughout, so Material's own strings — the
+      // date picker's buttons, month and weekday names — must match rather
+      // than defaulting to English.
+      locale: const Locale('fr'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('fr'), Locale('en')],
       // Dark-only by design; there is no light variant to fall back to.
       theme: buildAppTheme(),
       darkTheme: buildAppTheme(),

@@ -12,4 +12,11 @@ class Schedule {
       rawContentHtml: json['rawContentHtml'] as String?,
     );
   }
+
+  /// Round-trips through the offline cache.
+  Map<String, dynamic> toJson() => {
+        'weekLabel': weekLabel,
+        'hasSessions': hasSessions,
+        'rawContentHtml': rawContentHtml,
+      };
 }
