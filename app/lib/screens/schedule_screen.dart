@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
+import '../widgets/schedule_grid.dart';
 import '../widgets/state_views.dart';
 
 class ScheduleScreen extends ConsumerWidget {
@@ -53,9 +54,15 @@ class ScheduleScreen extends ConsumerWidget {
                   tint: AppColors.green,
                 );
               }
-              // Structured per-session rendering is still pending: every week
-              // we could test against was empty (summer break), so the markup
-              // for real sessions hasn't been verified yet.
+              if (view.schedule.sessions.isNotEmpty) {
+                return ScheduleGrid(
+                  sessions: view.schedule.sessions,
+                  weekStart: ref.watch(selectedWeekProvider),
+                );
+              }
+              // Falls through for real data: the week has classes but the
+              // markup for them has never been captured, so there is nothing
+              // to lay out yet. Better to say so than to invent a grid.
               return ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [

@@ -1,4 +1,4 @@
-package tn.isimg.isimg_app
+package io.github.haddajidev.isimg
 
 import io.flutter.embedding.android.FlutterActivity
 

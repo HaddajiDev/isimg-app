@@ -25,6 +25,10 @@ abstract final class AppColors {
   static const danger = Color(0xFFE5484D);
   static const warning = Color(0xFFE0A030);
 
+  /// Neutral-informational accent. Needed a third colour distinct from both
+  /// brand hues to tell the timetable's Cours / TD / TP apart.
+  static const info = Color(0xFF3B9EFF);
+
   // Text.
   static const textPrimary = Color(0xFFF4F2FA);
   static const textSecondary = Color(0xFFA9A3BF);
