@@ -7,7 +7,10 @@ plugins {
 
 android {
     namespace = "tn.isimg.isimg_app"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_secure_storage compiles against 37, and Flutter requires the app
+    // to compile against at least the highest of its plugins. Android SDKs are
+    // backward compatible, so this does not raise the minimum supported device.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

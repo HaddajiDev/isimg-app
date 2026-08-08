@@ -2,8 +2,4 @@
     <!-- Needed by the Flutter tool for hot reload and breakpoints. The release
          permission is declared in the main manifest. -->
     <uses-permission android:name="android.permission.INTERNET"/>
-
-    <!-- Permits the plain-HTTP backend used during development. Scoped to the
-         debug build so release stays HTTPS-only. -->
-    <application android:networkSecurityConfig="@xml/network_security_config" />
 </manifest>

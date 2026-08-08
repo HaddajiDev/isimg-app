@@ -8,15 +8,20 @@ void main() {
     expect(uri.host, 'api.dicebear.com');
     expect(uri.path, '/10.x/critters/svg');
     expect(uri.queryParameters['seed'], 'ahmed haddaji');
-    expect(uri.queryParameters['tags'], 'animation');
-    expect(
-      uri.queryParameters['animationVariant'],
-      'fast:1,fastest:1,medium:1,none:1,slow:1,slowest:1',
-    );
+  });
+
+  test('sends nothing but the seed', () {
+    // animationVariant/tags were dropped: flutter_svg cannot animate, and some
+    // encodings of them made the API answer 400, which the old network loader
+    // then fed to the SVG parser as if it were an image.
+    final uri = StudentAvatar.avatarUri('Ahmed Haddaji');
+
+    expect(uri.queryParameters.keys, ['seed']);
+    expect(uri.toString(), isNot(contains('animationVariant')));
+    expect(uri.toString(), isNot(contains('tags')));
   });
 
   test('escapes characters that would break the query string', () {
-    // Accents and spaces are common in student names.
     final uri = StudentAvatar.avatarUri('Amélie Le Roux');
     expect(uri.toString(), isNot(contains(' ')));
     expect(uri.queryParameters['seed'], 'amélie le roux');
@@ -24,7 +29,6 @@ void main() {
 
   test('name word order does not change the avatar', () {
     // The cursus page says "Ahmed Haddaji"; the relevé says "Haddaji Ahmed".
-    // Both must resolve to one avatar for the same student.
     expect(
       StudentAvatar.avatarUri('Ahmed Haddaji').toString(),
       StudentAvatar.avatarUri('Haddaji Ahmed').toString(),
@@ -42,7 +46,12 @@ void main() {
     );
     expect(
       StudentAvatar.avatarUri('Ahmed Haddaji').toString(),
-      isNot(StudentAvatar.avatarUri('Sarra Ben Ali').toString()),
+      isNot(StudentAvatar.avatarUri('Imed eddine Amara').toString()),
     );
+  });
+
+  test('canonicalises the seed for a three-part name', () {
+    // The account this first failed on.
+    expect(StudentAvatar.canonicalSeed('Imed eddine Amara'), 'amara eddine imed');
   });
 }
