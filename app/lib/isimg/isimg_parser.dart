@@ -319,6 +319,16 @@ class IsimgParser {
   }
 
   bool isUnauthorized(String body) => _isUnauthorized(body);
+
+  // ---- login ----
+
+  /// True for the public homepage carrying the login form (password field and
+  /// the Google sign-in widget). A check_account POST that is not going to
+  /// verify_2fa can still meta-refresh back to this exact page — that happens
+  /// on wrong credentials, not just on a successful trusted-device skip of the
+  /// code — so this is what tells the two apart.
+  bool looksLikeLoginPage(String body) =>
+      body.contains('id="loginform"') || body.contains('id="g_id_onload"');
 }
 
 class _UniteDraft {

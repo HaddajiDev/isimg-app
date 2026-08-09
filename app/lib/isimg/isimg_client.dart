@@ -130,6 +130,15 @@ class IsimgClient implements ApiClient {
       form: {'token': token, 'username': username, 'password': password},
     ));
 
+    // Wrong credentials can still carry a meta-refresh (e.g. a generic one
+    // back to the homepage), so "there is a redirect" is not proof the login
+    // worked. What check_account actually rendered for this exact request is
+    // the reliable signal — re-fetching the redirect target isn't, since that
+    // page can look this way for reasons unrelated to auth too.
+    if (_parser.looksLikeLoginPage(loginBody)) {
+      throw ApiException('invalid_credentials', statusCode: 401);
+    }
+
     final redirect = _extractMetaRefreshUrl(loginBody);
     if (redirect == null) throw ApiException('invalid_credentials', statusCode: 401);
 

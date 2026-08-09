@@ -166,4 +166,20 @@ void main() {
       );
     });
   });
+
+  group('login page', () {
+    late final body = fixture('login_page.html');
+
+    test('recognises the page carrying the password form and Google sign-in', () {
+      expect(parser.looksLikeLoginPage(body), isTrue);
+    });
+
+    test('an authenticated page is not mistaken for the login page', () {
+      // A wrong-credentials meta-refresh bounces back to this exact page, so
+      // the check only means anything if real data pages do not also trip it.
+      expect(parser.looksLikeLoginPage(fixture('grades.html')), isFalse);
+      expect(parser.looksLikeLoginPage(fixture('cursus.html')), isFalse);
+      expect(parser.looksLikeLoginPage(fixture('schedule_empty.html')), isFalse);
+    });
+  });
 }
