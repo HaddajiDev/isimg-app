@@ -59,7 +59,9 @@ class AuthGate extends ConsumerWidget {
       AuthStatus.checking => const Scaffold(body: Center(child: CircularProgressIndicator())),
       AuthStatus.unauthenticated || AuthStatus.submitting => const LoginScreen(),
       AuthStatus.otpPending => const OtpScreen(),
-      AuthStatus.authenticated => const HomeScreen(),
+      // A remembered login is being silently replayed in the background;
+      // show the shell now rather than a spinner for that round trip.
+      AuthStatus.authenticated || AuthStatus.reauthenticating => const HomeScreen(),
     };
   }
 }

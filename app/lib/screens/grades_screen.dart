@@ -31,7 +31,7 @@ class GradesScreen extends ConsumerWidget {
     final gradesAsync = ref.watch(gradesProvider);
 
     return gradesAsync.when(
-      loading: () => const _GradesSkeleton(),
+      loading: () => const _GradesLoadingPlaceholder(),
       error: (error, _) {
         if (error is ApiException && error.isSessionExpired) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,99 +49,138 @@ class GradesScreen extends ConsumerWidget {
           ),
         );
       },
-      data: (grades) {
-        final annee = effectiveCode(
-              ref.watch(selectedAuProvider),
-              grades.currentAu,
-              grades.annees,
-            ) ??
-            '';
-        final session = effectiveCode(
-              ref.watch(selectedSsProvider),
-              grades.currentSs,
-              grades.sessions,
-            ) ??
-            '';
-        final manual = ref.watch(manualNotesProvider).value ?? ManualNotes.empty;
-
-        // Student projections are layered on top of the fetched data; they can
-        // only fill slots the school left blank.
-        final semesters = applyManualNotes(
-          semesters: grades.semesters,
-          manual: manual,
-          annee: annee,
-          session: session,
-        );
-
-        final hasEstimates = _containsEstimate(semesters);
-        final manualCount = manual.countFor(annee: annee, session: session);
-
-        return RefreshIndicator(
-          onRefresh: () => ref.refresh(gradesProvider.future),
-          color: AppColors.purple,
-          backgroundColor: AppColors.surfaceRaised,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.xxl,
-            ),
-            children: [
-              _FilterBar(grades: grades),
-              const SizedBox(height: AppSpacing.lg),
-              _SummaryCard(grades: grades, semesters: semesters),
-              if (hasEstimates) ...[
-                const SizedBox(height: AppSpacing.md),
-                const EstimateLegend(),
-              ],
-              if (manualCount > 0) ...[
-                const SizedBox(height: AppSpacing.sm),
-                _ManualNotesBanner(
-                  count: manualCount,
-                  onClear: () => ref
-                      .read(manualNotesProvider.notifier)
-                      .clearFor(annee: annee, session: session),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              if (semesters.isEmpty)
-                const AppCard(
-                  child: SizedBox(
-                    height: 180,
-                    child: MessageView(
-                      icon: Icons.inbox_rounded,
-                      title: 'Aucun relevé',
-                      subtitle: 'Pas de notes pour cette année/session.',
-                    ),
-                  ),
-                )
-              else
-                for (final semestre in semesters)
-                  _SemesterSection(
-                    semestre: semestre,
-                    annee: annee,
-                    session: session,
-                  ),
-            ],
-          ),
-        );
-      },
+      data: (grades) => RefreshIndicator(
+        onRefresh: () => ref.refresh(gradesProvider.future),
+        color: AppColors.purple,
+        backgroundColor: AppColors.surfaceRaised,
+        child: _GradesContent(grades: grades),
+      ),
     );
   }
+}
 
-  static bool _containsEstimate(List<Semestre> semesters) {
-    for (final semestre in semesters) {
-      if (_calc.semestreAverage(semestre).isEstimate) return true;
-      for (final unite in semestre.unites) {
-        if (_calc.uniteAverage(unite).isEstimate) return true;
-        for (final matiere in unite.matieres) {
-          if (_calc.matiereAverage(matiere).isEstimate) return true;
-        }
+/// Shown while [gradesProvider] is still loading: the last cached relevé for
+/// the selected année/session, if there is one, instead of a bare skeleton.
+class _GradesLoadingPlaceholder extends ConsumerWidget {
+  const _GradesLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final peeked = ref.watch(gradesCachePeekProvider);
+
+    return peeked.when(
+      data: (cached) => cached == null
+          ? const _GradesSkeleton()
+          : Stack(
+              children: [
+                _GradesContent(grades: cached.grades),
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: AppColors.purple,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+              ],
+            ),
+      loading: () => const _GradesSkeleton(),
+      error: (_, _) => const _GradesSkeleton(),
+    );
+  }
+}
+
+/// The relevé itself, shared between a fresh load and a cached seed so both
+/// render identically.
+class _GradesContent extends ConsumerWidget {
+  final Grades grades;
+
+  const _GradesContent({required this.grades});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final annee = effectiveCode(
+          ref.watch(selectedAuProvider),
+          grades.currentAu,
+          grades.annees,
+        ) ??
+        '';
+    final session = effectiveCode(
+          ref.watch(selectedSsProvider),
+          grades.currentSs,
+          grades.sessions,
+        ) ??
+        '';
+    final manual = ref.watch(manualNotesProvider).value ?? ManualNotes.empty;
+
+    // Student projections are layered on top of the fetched data; they can
+    // only fill slots the school left blank.
+    final semesters = applyManualNotes(
+      semesters: grades.semesters,
+      manual: manual,
+      annee: annee,
+      session: session,
+    );
+
+    final hasEstimates = _containsEstimate(semesters);
+    final manualCount = manual.countFor(annee: annee, session: session);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
+      children: [
+        _FilterBar(grades: grades),
+        const SizedBox(height: AppSpacing.lg),
+        _SummaryCard(grades: grades, semesters: semesters),
+        if (hasEstimates) ...[
+          const SizedBox(height: AppSpacing.md),
+          const EstimateLegend(),
+        ],
+        if (manualCount > 0) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _ManualNotesBanner(
+            count: manualCount,
+            onClear: () =>
+                ref.read(manualNotesProvider.notifier).clearFor(annee: annee, session: session),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        if (semesters.isEmpty)
+          const AppCard(
+            child: SizedBox(
+              height: 190,
+              child: MessageView(
+                icon: Icons.inbox_rounded,
+                title: 'Aucun relevé',
+                subtitle: 'Pas de notes pour cette année/session.',
+              ),
+            ),
+          )
+        else
+          for (final semestre in semesters)
+            _SemesterSection(semestre: semestre, annee: annee, session: session),
+      ],
+    );
+  }
+}
+
+bool _containsEstimate(List<Semestre> semesters) {
+  for (final semestre in semesters) {
+    if (_calc.semestreAverage(semestre).isEstimate) return true;
+    for (final unite in semestre.unites) {
+      if (_calc.uniteAverage(unite).isEstimate) return true;
+      for (final matiere in unite.matieres) {
+        if (_calc.matiereAverage(matiere).isEstimate) return true;
       }
     }
-    return false;
   }
+  return false;
 }
 
 class _SemesterSection extends StatelessWidget {

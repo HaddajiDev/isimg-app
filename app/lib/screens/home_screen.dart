@@ -20,7 +20,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _tabs = [
     (title: 'Emploi', subtitle: 'Votre semaine', screen: ScheduleScreen()),
     (title: 'Notes', subtitle: 'Relevés et moyennes', screen: GradesScreen()),
-    (title: 'Profil', subtitle: 'Identité et parcours', screen: ProfileScreen()),
+    (
+      title: 'Profil',
+      subtitle: 'Identité et parcours',
+      screen: ProfileScreen(),
+    ),
   ];
 
   @override
@@ -37,10 +41,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(tab.title),
             Text(
               tab.subtitle,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textMuted, fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -88,9 +92,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceRaised,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
         title: const Text('Se déconnecter ?'),
-        content: const Text('Vous devrez vous reconnecter avec un nouveau code.'),
+        content: const Text(
+          'Vous devrez vous reconnecter avec un nouveau code.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

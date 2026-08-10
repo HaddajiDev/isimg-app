@@ -58,6 +58,15 @@ class Epreuve {
   /// A rattrapage (session de contrôle) exam. How the school combines these
   /// with the main session is not modelled — see [computeAverages].
   bool get isRattrapage => libelle.toLowerCase().startsWith('rex');
+
+  /// Round-trips through the offline cache. Manual notes are never cached —
+  /// they live in their own store and are re-applied on top of fresh data.
+  Map<String, dynamic> toJson() => {
+        'libelle': libelle,
+        'poids': poids,
+        'note': note,
+        'absent': absent,
+      };
 }
 
 class Matiere {
@@ -89,6 +98,15 @@ class Matiere {
             .map((e) => Epreuve.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
+
+  Map<String, dynamic> toJson() => {
+        'libelle': libelle,
+        'regime': regime,
+        'coefficient': coefficient,
+        'credits': credits,
+        'moyenne': moyenne,
+        'epreuves': epreuves.map((e) => e.toJson()).toList(),
+      };
 }
 
 class Unite {
@@ -115,6 +133,14 @@ class Unite {
             .map((m) => Matiere.fromJson(m as Map<String, dynamic>))
             .toList(),
       );
+
+  Map<String, dynamic> toJson() => {
+        'libelle': libelle,
+        'coefficient': coefficient,
+        'credits': credits,
+        'moyenne': moyenne,
+        'matieres': matieres.map((m) => m.toJson()).toList(),
+      };
 }
 
 class Semestre {
@@ -129,4 +155,9 @@ class Semestre {
             .map((u) => Unite.fromJson(u as Map<String, dynamic>))
             .toList(),
       );
+
+  Map<String, dynamic> toJson() => {
+        'semestre': label,
+        'unites': unites.map((u) => u.toJson()).toList(),
+      };
 }

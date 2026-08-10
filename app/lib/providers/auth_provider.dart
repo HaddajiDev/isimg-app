@@ -8,7 +8,20 @@ import 'api_provider.dart';
 final credentialStoreProvider = Provider<CredentialStore>((ref) => CredentialStore());
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());
 
-enum AuthStatus { checking, unauthenticated, submitting, otpPending, authenticated }
+enum AuthStatus {
+  checking,
+  unauthenticated,
+  submitting,
+  otpPending,
+  authenticated,
+
+  /// A stored session was not found, but a remembered login is being
+  /// replayed silently. Treated as authenticated by the UI — the shell and
+  /// any cached tab content render immediately rather than sitting behind a
+  /// spinner for a network round trip — but data providers should not treat
+  /// it as a confirmed session yet.
+  reauthenticating,
+}
 
 class AuthState {
   final AuthStatus status;
@@ -32,7 +45,16 @@ class AuthState {
 
   const AuthState.initial() : this(status: AuthStatus.checking);
 
+  /// Strictly "there is a live, confirmed session" — data providers gate
+  /// fetches on this, since [AuthStatus.reauthenticating] has no session yet
+  /// to fetch with. The app shell itself renders for both; see [AuthGate].
   bool get isAuthenticated => status == AuthStatus.authenticated;
+
+  /// The shell (and any cached tab content) should render for this status —
+  /// broader than [isAuthenticated], since a remembered login is being
+  /// silently replayed and almost always still works.
+  bool get showsAppShell =>
+      status == AuthStatus.authenticated || status == AuthStatus.reauthenticating;
 
   AuthState copyWith({
     AuthStatus? status,
@@ -81,9 +103,11 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       // No session, but the device remembers the login: sign in silently.
+      // The shell renders now rather than waiting on this network round
+      // trip — see AuthStatus.reauthenticating.
       final stored = await _credentials.read();
       if (stored != null) {
-        state = state.copyWith(status: AuthStatus.submitting);
+        state = state.copyWith(status: AuthStatus.reauthenticating);
         if (await _attemptSilentLogin(stored)) return;
       }
     } catch (_) {

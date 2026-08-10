@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/version_footer.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -44,107 +45,129 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // The artwork carries its own dark background and glow, so
-                    // it needs no container behind it on this canvas.
-                    Center(
-                      child: Image.asset(
-                        'assets/logo.png',
-                        height: 148,
-                        width: 148,
-                        filterQuality: FilterQuality.medium,
-                        semanticLabel: 'ISIMG',
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'ISIMG',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 2),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Espace étudiant',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    TextField(
-                      controller: _usernameController,
-                      autofillHints: const [AutofillHints.username],
-                      textInputAction: TextInputAction.next,
-                      onSubmitted: (_) => _passwordFocus.requestFocus(),
-                      decoration: const InputDecoration(
-                        labelText: 'Identifiant',
-                        prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _passwordController,
-                      focusNode: _passwordFocus,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 20,
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // The artwork carries its own dark background and glow, so
+                          // it needs no container behind it on this canvas.
+                          Center(
+                            child: Image.asset(
+                              'assets/logo.png',
+                              height: 148,
+                              width: 148,
+                              filterQuality: FilterQuality.medium,
+                              semanticLabel: 'ISIMG',
+                            ),
                           ),
-                          tooltip: _obscurePassword
-                              ? 'Afficher le mot de passe'
-                              : 'Masquer le mot de passe',
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'ISIMG',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Espace étudiant',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxl),
+                          TextField(
+                            controller: _usernameController,
+                            autofillHints: const [AutofillHints.username],
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) => _passwordFocus.requestFocus(),
+                            decoration: const InputDecoration(
+                              labelText: 'Identifiant',
+                              prefixIcon: Icon(
+                                Icons.person_outline_rounded,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          TextField(
+                            controller: _passwordController,
+                            focusNode: _passwordFocus,
+                            obscureText: _obscurePassword,
+                            autofillHints: const [AutofillHints.password],
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _submit(),
+                            decoration: InputDecoration(
+                              labelText: 'Mot de passe',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline_rounded,
+                                size: 20,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  size: 20,
+                                ),
+                                tooltip: _obscurePassword
+                                    ? 'Afficher le mot de passe'
+                                    : 'Masquer le mot de passe',
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _RememberMeToggle(
+                            value: _rememberMe,
+                            onChanged: (value) =>
+                                setState(() => _rememberMe = value),
+                          ),
+                          if (authState.errorMessage != null) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            _ErrorBanner(message: authState.errorMessage!),
+                          ],
+                          const SizedBox(height: AppSpacing.xl),
+                          FilledButton(
+                            onPressed: isSubmitting ? null : _submit,
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  )
+                                : const Text('Se connecter'),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          Text(
+                            'Vos identifiants ISIMG ne sont jamais stockés.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _RememberMeToggle(
-                      value: _rememberMe,
-                      onChanged: (value) => setState(() => _rememberMe = value),
-                    ),
-                    if (authState.errorMessage != null) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      _ErrorBanner(message: authState.errorMessage!),
-                    ],
-                    const SizedBox(height: AppSpacing.xl),
-                    FilledButton(
-                      onPressed: isSubmitting ? null : _submit,
-                      child: isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.textMuted,
-                              ),
-                            )
-                          : const Text('Se connecter'),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Vos identifiants ISIMG ne sont jamais stockés.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const VersionFooter(),
+            ],
           ),
         ),
       ),
@@ -183,7 +206,10 @@ class _RememberMeToggle extends StatelessWidget {
                 value: value,
                 onChanged: (next) => onChanged(next ?? false),
                 activeColor: AppColors.purple,
-                side: const BorderSide(color: AppColors.borderStrong, width: 1.5),
+                side: const BorderSide(
+                  color: AppColors.borderStrong,
+                  width: 1.5,
+                ),
               ),
             ),
             Expanded(
@@ -198,9 +224,9 @@ class _RememberMeToggle extends StatelessWidget {
                     'Enregistre vos identifiants sur cet appareil uniquement, '
                     'pour reconnecter automatiquement.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -228,15 +254,18 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 18),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.danger,
+            size: 18,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.danger),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.danger),
             ),
           ),
         ],

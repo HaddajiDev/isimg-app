@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -13,6 +14,7 @@ import 'package:isimg_app/providers/auth_provider.dart';
 import 'package:isimg_app/screens/home_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/student_avatar.dart';
+import 'package:isimg_app/widgets/version_footer.dart';
 
 /// Stands in for the backend so widget tests never touch the network.
 class FakeApiClient implements ApiClient {
@@ -171,6 +173,7 @@ class _AuthedNotifier extends AuthNotifier {
 void main() {
   setUp(() {
     FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform({});
+    SharedPreferences.setMockInitialValues({});
     StudentAvatar.debugDisableRemote = true;
   });
 
@@ -183,6 +186,14 @@ void main() {
     // AppBar title reflects the active tab.
     expect(find.text('Votre semaine'), findsOneWidget);
     expect(find.text('Relevés et moyennes'), findsNothing);
+  });
+
+  testWidgets('the version footer does not follow the student past login',
+      (tester) async {
+    await tester.pumpWidget(wrap(FakeApiClient()));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(VersionFooter), findsNothing);
   });
 
   testWidgets('grades request omits au/ss so the server picks the current année',

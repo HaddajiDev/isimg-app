@@ -45,6 +45,21 @@ class CursusYear {
     );
   }
 
+  /// Round-trips through the offline cache, using the same upstream-header
+  /// keys [fromJson] reads back.
+  Map<String, dynamic> toJson() => {
+        'AU': annee,
+        'Niveau': niveau,
+        'Classe': classe,
+        'Groupe': groupe,
+        'N° Inscription': numeroInscription,
+        'Statut': statut,
+        'Inscription': inscription,
+        'Moyenne': moyenne,
+        'Crédits': credits,
+        'Résultat': resultat,
+      };
+
   /// Leading numeric part of the moyenne — the site can append a note such as
   /// "0 (S1)" for a year still in progress.
   double? get moyenneValue {
@@ -93,4 +108,12 @@ class Profile {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'prenom': prenom,
+        'nom': nom,
+        'cin': cin,
+        'filiere': filiere,
+        'years': years.map((y) => y.toJson()).toList(),
+      };
 }

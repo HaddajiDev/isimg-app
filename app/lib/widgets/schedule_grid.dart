@@ -3,12 +3,30 @@ import 'package:flutter/material.dart';
 import '../models/seance.dart';
 import '../theme/app_theme.dart';
 
+bool _isSameDate(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// Parses "08:15-09:45" into minutes-since-midnight bounds. Returns null for
+/// anything that doesn't look like that shape, so a malformed slot just never
+/// matches rather than crashing the grid.
+(int, int)? _parseSlotRange(String slot) {
+  final match =
+      RegExp(r'^(\d{1,2})[:h](\d{2})\s*-\s*(\d{1,2})[:h](\d{2})').firstMatch(slot.trim());
+  if (match == null) return null;
+  return (
+    int.parse(match[1]!) * 60 + int.parse(match[2]!),
+    int.parse(match[3]!) * 60 + int.parse(match[4]!),
+  );
+}
+
 /// Timetable laid out the way the school prints it: one column per day, one row
 /// per time slot, each class a coloured block.
 ///
 /// The grid is wider than a phone, so it scrolls sideways with the slot column
 /// pinned — a phone-shaped rewrite would lose the week-at-a-glance reading that
-/// makes this layout worth keeping.
+/// makes this layout worth keeping. Today's column and the current time's row
+/// are both tinted, like a spreadsheet crosshair, so "where am I right now" is
+/// a glance rather than a lookup.
 class ScheduleGrid extends StatelessWidget {
   final List<Seance> sessions;
 
@@ -47,10 +65,36 @@ class ScheduleGrid extends StatelessWidget {
     return null;
   }
 
+  /// The weekday column that is today, or null when the displayed week isn't
+  /// the current one — highlighting "now" on a week that isn't this week
+  /// would just be misleading.
+  int? _todayWeekday(List<int> weekdays) {
+    final now = DateTime.now();
+    for (final weekday in weekdays) {
+      if (_isSameDate(weekStart.add(Duration(days: weekday - 1)), now)) return weekday;
+    }
+    return null;
+  }
+
+  /// The slot the current time falls in, only meaningful alongside
+  /// [_todayWeekday] — same reasoning: a time-of-day match means nothing on a
+  /// week that isn't the current one.
+  String? _currentSlot(List<String> slots, int? todayWeekday) {
+    if (todayWeekday == null) return null;
+    final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
+    for (final slot in slots) {
+      final range = _parseSlotRange(slot);
+      if (range != null && nowMinutes >= range.$1 && nowMinutes < range.$2) return slot;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final slots = _slots;
     final weekdays = _weekdays;
+    final todayWeekday = _todayWeekday(weekdays);
+    final currentSlot = _currentSlot(slots, todayWeekday);
 
     // The slot column sits outside the horizontal scroll view so the times stay
     // readable however far right the week is scrolled; only the day columns move.
@@ -71,7 +115,8 @@ class ScheduleGrid extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const _SlotHeaderCell(),
-                  for (final slot in slots) _SlotCell(slot: slot),
+                  for (final slot in slots)
+                    _SlotCell(slot: slot, isCurrent: slot == currentSlot),
                 ],
               ),
               Expanded(
@@ -81,12 +126,20 @@ class ScheduleGrid extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _HeaderRow(weekdays: weekdays, weekStart: weekStart),
+                      _HeaderRow(
+                        weekdays: weekdays,
+                        weekStart: weekStart,
+                        todayWeekday: todayWeekday,
+                      ),
                       for (final slot in slots)
                         Row(
                           children: [
                             for (final weekday in weekdays)
-                              _GridCell(seance: _at(weekday, slot)),
+                              _GridCell(
+                                seance: _at(weekday, slot),
+                                isToday: weekday == todayWeekday,
+                                isCurrentSlot: slot == currentSlot,
+                              ),
                           ],
                         ),
                     ],
@@ -129,8 +182,9 @@ class _SlotHeaderCell extends StatelessWidget {
 class _HeaderRow extends StatelessWidget {
   final List<int> weekdays;
   final DateTime weekStart;
+  final int? todayWeekday;
 
-  const _HeaderRow({required this.weekdays, required this.weekStart});
+  const _HeaderRow({required this.weekdays, required this.weekStart, required this.todayWeekday});
 
   static const _names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
@@ -141,7 +195,6 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
     final theme = Theme.of(context);
 
     return Container(
@@ -151,10 +204,7 @@ class _HeaderRow extends StatelessWidget {
           for (final weekday in weekdays)
             Builder(
               builder: (context) {
-                final day = weekStart.add(Duration(days: weekday - 1));
-                final isToday = day.year == today.year &&
-                    day.month == today.month &&
-                    day.day == today.day;
+                final isToday = weekday == todayWeekday;
                 return Container(
                   width: ScheduleGrid._dayColumnWidth,
                   height: ScheduleGrid._headerHeight,
@@ -193,8 +243,9 @@ class _HeaderRow extends StatelessWidget {
 
 class _SlotCell extends StatelessWidget {
   final String slot;
+  final bool isCurrent;
 
-  const _SlotCell({required this.slot});
+  const _SlotCell({required this.slot, required this.isCurrent});
 
   @override
   Widget build(BuildContext context) {
@@ -205,9 +256,9 @@ class _SlotCell extends StatelessWidget {
       width: ScheduleGrid._slotColumnWidth,
       height: ScheduleGrid._rowHeight,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceRaised,
-        border: Border(
+      decoration: BoxDecoration(
+        color: isCurrent ? AppColors.purpleGlow : AppColors.surfaceRaised,
+        border: const Border(
           right: BorderSide(color: AppColors.border),
           top: BorderSide(color: AppColors.border),
         ),
@@ -220,7 +271,8 @@ class _SlotCell extends StatelessWidget {
               part.trim(),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 11,
-                    color: AppColors.textSecondary,
+                    fontWeight: isCurrent ? FontWeight.w700 : null,
+                    color: isCurrent ? AppColors.purple : AppColors.textSecondary,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
             ),
@@ -232,8 +284,10 @@ class _SlotCell extends StatelessWidget {
 
 class _GridCell extends StatelessWidget {
   final Seance? seance;
+  final bool isToday;
+  final bool isCurrentSlot;
 
-  const _GridCell({this.seance});
+  const _GridCell({this.seance, required this.isToday, required this.isCurrentSlot});
 
   /// Colour per kind of class, so a week can be read at a glance. The school's
   /// own palette is not reused: it is light-theme pastel and unreadable here.
@@ -247,11 +301,16 @@ class _GridCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = seance;
+    // Crosshair effect: a faint wash along today's column and the current
+    // row, with their intersection — the actual "happening now" cell —
+    // reading strongest since both apply there.
+    final washAlpha = (isToday ? 0.05 : 0.0) + (isCurrentSlot ? 0.05 : 0.0);
 
     return Container(
       width: ScheduleGrid._dayColumnWidth,
       height: ScheduleGrid._rowHeight,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        color: washAlpha > 0 ? AppColors.purple.withValues(alpha: washAlpha) : null,
         border: Border(
           right: BorderSide(color: AppColors.border),
           top: BorderSide(color: AppColors.border),

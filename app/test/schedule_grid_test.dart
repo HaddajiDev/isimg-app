@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isimg_app/core/demo_data.dart';
 import 'package:isimg_app/models/schedule.dart';
 import 'package:isimg_app/models/seance.dart';
+import 'package:isimg_app/providers/schedule_provider.dart' show mondayOf;
 import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/schedule_grid.dart';
 
@@ -76,6 +77,58 @@ void main() {
     final early = tester.getTopLeft(find.text('Tôt')).dy;
     final late = tester.getTopLeft(find.text('Tard')).dy;
     expect(early, lessThan(late));
+  });
+
+  testWidgets('highlights today\'s column and the current time\'s row on the current week',
+      (tester) async {
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final weekStart = mondayOf(DateTime.now());
+    final today = DateTime.now().weekday;
+
+    await tester.pumpWidget(wrap(ScheduleGrid(
+      // A slot spanning the whole day always contains "now", regardless of
+      // when the test happens to run.
+      sessions: [
+        Seance(weekday: today, slot: '00:00-23:59', type: SeanceType.cours, matiere: 'Maintenant'),
+      ],
+      weekStart: weekStart,
+    )));
+
+    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    final todayLabel = tester.widget<Text>(find.text(names[today - 1]));
+    expect(todayLabel.style?.color, AppColors.purple);
+
+    final slotStart = tester.widget<Text>(find.text('00:00'));
+    expect(slotStart.style?.color, AppColors.purple);
+    expect(slotStart.style?.fontWeight, FontWeight.w700);
+  });
+
+  testWidgets('does not highlight anything on a week that is not the current one',
+      (tester) async {
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    // Ten weeks away is never "now", whichever weekday this runs on.
+    final weekStart = mondayOf(DateTime.now()).add(const Duration(days: 70));
+    final today = DateTime.now().weekday;
+
+    await tester.pumpWidget(wrap(ScheduleGrid(
+      sessions: [
+        Seance(weekday: today, slot: '00:00-23:59', type: SeanceType.cours, matiere: 'Pas maintenant'),
+      ],
+      weekStart: weekStart,
+    )));
+
+    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    final dayLabel = tester.widget<Text>(find.text(names[today - 1]));
+    expect(dayLabel.style?.color, AppColors.textPrimary);
+
+    final slotStart = tester.widget<Text>(find.text('00:00'));
+    expect(slotStart.style?.color, AppColors.textSecondary);
   });
 
   test('the demo week covers every day and slot of the timetable', () {

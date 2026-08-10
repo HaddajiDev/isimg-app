@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_exception.dart';
+import '../models/schedule.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../theme/app_theme.dart';
@@ -22,7 +23,7 @@ class ScheduleScreen extends ConsumerWidget {
           _OfflineBanner(capturedAt: capturedAt),
         Expanded(
           child: scheduleAsync.when(
-            loading: () => const _ScheduleSkeleton(),
+            loading: () => const _ScheduleLoadingPlaceholder(),
             error: (error, _) {
               if (error is ApiException && error.isSessionExpired) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -45,57 +46,123 @@ class ScheduleScreen extends ConsumerWidget {
                 ),
               );
             },
-            data: (view) {
-              if (!view.schedule.hasSessions) {
-                return const MessageView(
-                  icon: Icons.event_available_rounded,
-                  title: 'Aucun cours cette semaine',
-                  subtitle: 'Rien de prévu — profitez-en.',
-                  tint: AppColors.green,
-                );
-              }
-              if (view.schedule.sessions.isNotEmpty) {
-                return ScheduleGrid(
-                  sessions: view.schedule.sessions,
-                  weekStart: ref.watch(selectedWeekProvider),
-                );
-              }
-              // Falls through for real data: the week has classes but the
-              // markup for them has never been captured, so there is nothing
-              // to lay out yet. Better to say so than to invent a grid.
-              return ListView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+            data: (view) => RefreshIndicator(
+              onRefresh: () => ref.refresh(scheduleProvider.future),
+              color: AppColors.purple,
+              backgroundColor: AppColors.surfaceRaised,
+              child: _ScheduleContent(
+                schedule: view.schedule,
+                weekStart: ref.watch(selectedWeekProvider),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shown while [scheduleProvider] is still loading: the last cached week for
+/// whichever week is selected, if there is one, instead of a bare skeleton —
+/// switching weeks or reopening the app should not feel like starting cold
+/// every time.
+class _ScheduleLoadingPlaceholder extends ConsumerWidget {
+  const _ScheduleLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final peeked = ref.watch(scheduleCachePeekProvider);
+    final weekStart = ref.watch(selectedWeekProvider);
+
+    return peeked.when(
+      data: (cached) => cached == null
+          ? const _ScheduleSkeleton()
+          : Stack(
+              children: [
+                _ScheduleContent(schedule: cached.schedule, weekStart: weekStart),
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: AppColors.purple,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+              ],
+            ),
+      loading: () => const _ScheduleSkeleton(),
+      error: (_, _) => const _ScheduleSkeleton(),
+    );
+  }
+}
+
+/// The actual week view, shared between a fresh load and a cached seed so
+/// both render identically.
+class _ScheduleContent extends StatelessWidget {
+  final Schedule schedule;
+  final DateTime weekStart;
+
+  const _ScheduleContent({required this.schedule, required this.weekStart});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!schedule.hasSessions) {
+      // A RefreshIndicator only detects the pull gesture over a Scrollable,
+      // so the empty state needs one too even though it never needs to
+      // actually scroll.
+      return LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: const MessageView(
+              icon: Icons.event_available_rounded,
+              title: 'Aucun cours cette semaine',
+              subtitle: 'Rien de prévu — profitez-en.',
+              tint: AppColors.green,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (schedule.sessions.isNotEmpty) {
+      return ScheduleGrid(sessions: schedule.sessions, weekStart: weekStart);
+    }
+
+    // Falls through for real data: the week has classes but the markup for
+    // them has never been captured, so there is nothing to lay out yet.
+    // Better to say so than to invent a grid.
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        AppCard(
+          accent: AppColors.purple,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  AppCard(
-                    accent: AppColors.purple,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.event_rounded, color: AppColors.purple, size: 20),
-                            const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              'Séances programmées',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Cette semaine contient des séances. '
-                          'L\'affichage détaillé arrive bientôt.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
+                  const Icon(Icons.event_rounded, color: AppColors.purple, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Séances programmées',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Cette semaine contient des séances. '
+                'L\'affichage détaillé arrive bientôt.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       ],

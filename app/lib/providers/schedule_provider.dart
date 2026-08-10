@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_exception.dart';
@@ -37,10 +39,23 @@ class ScheduleView {
 final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
   final auth = ref.watch(authProvider);
   final weekStart = ref.watch(selectedWeekProvider);
-  if (!auth.isAuthenticated) throw ApiException('no_session', statusCode: 401);
-
   final week = formatWeek(weekStart);
   final cache = ref.watch(scheduleCacheProvider);
+
+  if (auth.status == AuthStatus.unauthenticated) {
+    throw ApiException('no_session', statusCode: 401);
+  }
+  if (!auth.isAuthenticated) {
+    // A remembered login is being silently replayed — there is no session to
+    // fetch with yet. Show the cache if there is one; this rebuilds the
+    // moment auth settles either way, so there is nothing else to do here
+    // but wait rather than surface a spurious error.
+    final cached = await cache.read(week);
+    if (cached != null) {
+      return ScheduleView(schedule: cached.schedule, capturedAt: cached.capturedAt);
+    }
+    return Completer<ScheduleView>().future;
+  }
 
   try {
     final schedule = await ref.watch(apiClientProvider).getSchedule(week: week);
@@ -56,6 +71,14 @@ final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
 
     return ScheduleView(schedule: cached.schedule, capturedAt: cached.capturedAt);
   }
+});
+
+/// Reads the cache without touching the network — used to seed the screen
+/// instantly while [scheduleProvider] is still loading, instead of a
+/// skeleton.
+final scheduleCachePeekProvider = FutureProvider.autoDispose<CachedSchedule?>((ref) {
+  final cache = ref.watch(scheduleCacheProvider);
+  return cache.read(formatWeek(ref.watch(selectedWeekProvider)));
 });
 
 void goToPreviousWeek(WidgetRef ref) {

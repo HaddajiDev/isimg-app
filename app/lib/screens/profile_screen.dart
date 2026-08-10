@@ -17,7 +17,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
 
     return profileAsync.when(
-      loading: () => const _ProfileSkeleton(),
+      loading: () => const _ProfileLoadingPlaceholder(),
       error: (error, _) {
         if (error is ApiException && error.isSessionExpired) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -41,47 +41,93 @@ class ProfileScreen extends ConsumerWidget {
         onRefresh: () => ref.refresh(profileProvider.future),
         color: AppColors.purple,
         backgroundColor: AppColors.surfaceRaised,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.xxl,
-          ),
-          children: [
-            _IdentityCard(profile: profile),
-            const SizedBox(height: AppSpacing.xl),
-            Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppSpacing.md,
-                left: AppSpacing.xs,
-              ),
-              child: Text(
-                'Parcours',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            if (profile.years.isEmpty)
-              const AppCard(
-                child: SizedBox(
-                  height: 140,
-                  child: MessageView(
-                    icon: Icons.timeline_rounded,
-                    title: 'Aucun parcours',
-                    subtitle: 'Rien à afficher pour le moment.',
+        child: _ProfileContent(profile: profile),
+      ),
+    );
+  }
+}
+
+/// Shown while [profileProvider] is still loading: the last cached profile,
+/// if there is one, instead of a bare skeleton.
+class _ProfileLoadingPlaceholder extends ConsumerWidget {
+  const _ProfileLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final peeked = ref.watch(profileCachePeekProvider);
+
+    return peeked.when(
+      data: (cached) => cached == null
+          ? const _ProfileSkeleton()
+          : Stack(
+              children: [
+                _ProfileContent(profile: cached.profile),
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: AppColors.purple,
+                    backgroundColor: Colors.transparent,
                   ),
                 ),
-              )
-            else
-              for (var i = 0; i < profile.years.length; i++)
-                _YearTile(
-                  year: profile.years[i],
-                  isFirst: i == 0,
-                  isLast: i == profile.years.length - 1,
-                ),
-          ],
-        ),
+              ],
+            ),
+      loading: () => const _ProfileSkeleton(),
+      error: (_, _) => const _ProfileSkeleton(),
+    );
+  }
+}
+
+/// The profile itself, shared between a fresh load and a cached seed so both
+/// render identically.
+class _ProfileContent extends StatelessWidget {
+  final Profile profile;
+
+  const _ProfileContent({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xxl,
       ),
+      children: [
+        _IdentityCard(profile: profile),
+        const SizedBox(height: AppSpacing.xl),
+        Padding(
+          padding: const EdgeInsets.only(
+            bottom: AppSpacing.md,
+            left: AppSpacing.xs,
+          ),
+          child: Text(
+            'Parcours',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        if (profile.years.isEmpty)
+          const AppCard(
+            child: SizedBox(
+              height: 140,
+              child: MessageView(
+                icon: Icons.timeline_rounded,
+                title: 'Aucun parcours',
+                subtitle: 'Rien à afficher pour le moment.',
+              ),
+            ),
+          )
+        else
+          for (var i = 0; i < profile.years.length; i++)
+            _YearTile(
+              year: profile.years[i],
+              isFirst: i == 0,
+              isLast: i == profile.years.length - 1,
+            ),
+      ],
     );
   }
 }

@@ -15,6 +15,8 @@ class SelectOption {
       selected: json['selected'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => {'code': code, 'label': label, 'selected': selected};
 }
 
 class Grades {
@@ -73,4 +75,20 @@ class Grades {
         .map((o) => SelectOption.fromJson(o as Map<String, dynamic>))
         .toList();
   }
+
+  /// Round-trips through the offline cache.
+  Map<String, dynamic> toJson() => {
+        'nom': nom,
+        'cin': cin,
+        'filiere': filiere,
+        'niveau': niveau,
+        'moyenneGenerale': moyenneGenerale,
+        'credits': credits,
+        'rang': rang,
+        'semesters': semesters.map((s) => s.toJson()).toList(),
+        'annees': annees.map((o) => o.toJson()).toList(),
+        'sessions': sessions.map((o) => o.toJson()).toList(),
+        'currentAu': currentAu,
+        'currentSs': currentSs,
+      };
 }
