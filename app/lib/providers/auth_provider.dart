@@ -1,8 +1,40 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
+import '../core/api_exception.dart';
 import '../core/credential_store.dart';
 import '../core/session_store.dart';
 import 'api_provider.dart';
+
+/// What a silent replay of a remembered login found out: whether it worked,
+/// and what — if anything — is worth telling the student when it did not.
+typedef _SilentLogin = ({bool signedIn, String? message});
+
+const _wrongCredentials = 'Identifiants incorrects';
+
+/// Nothing the student can do from in here: until the password is changed on
+/// the site, every login lands on its reset form. Saying "incorrect" would send
+/// them off retyping a password that is actually right.
+const _passwordExpired = 'Votre mot de passe ISIMG a expiré. Changez-le sur '
+    'isimg.rnu.tn, puis reconnectez-vous.';
+
+/// For a login the student just typed: name the likely cause, defaulting to the
+/// credentials since those are what they chose.
+String _typedLoginMessage(Object error) =>
+    error is ApiException && error.code == 'password_expired'
+        ? _passwordExpired
+        : _wrongCredentials;
+
+/// For a login replayed silently from storage: speak only when the site was
+/// explicit about it. A network blip is not the stored password's fault, and
+/// wrongly clearing it would log the student out for nothing.
+String? _replayedLoginMessage(Object error) {
+  if (error is! ApiException) return null;
+  return switch (error.code) {
+    'password_expired' => _passwordExpired,
+    'invalid_credentials' => _wrongCredentials,
+    _ => null,
+  };
+}
 
 /// Injectable so tests can supply in-memory stores.
 final credentialStoreProvider = Provider<CredentialStore>((ref) => CredentialStore());
@@ -108,7 +140,12 @@ class AuthNotifier extends Notifier<AuthState> {
       final stored = await _credentials.read();
       if (stored != null) {
         state = state.copyWith(status: AuthStatus.reauthenticating);
-        if (await _attemptSilentLogin(stored)) return;
+        final attempt = await _attemptSilentLogin(stored);
+        if (attempt.signedIn) return;
+        if (attempt.message != null) {
+          await logout(errorMessage: attempt.message);
+          return;
+        }
       }
     } catch (_) {
       // Storage unavailable (e.g. a test harness) — fall through to the login
@@ -117,19 +154,19 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.unauthenticated);
   }
 
-  /// Signs in with saved credentials. Returns false if they no longer work, or
-  /// if the site now wants a code — the caller then shows the login screen.
-  Future<bool> _attemptSilentLogin(Credentials credentials) async {
+  /// Signs in with saved credentials.
+  Future<_SilentLogin> _attemptSilentLogin(Credentials credentials) async {
     try {
       final result = await _api.login(credentials.username, credentials.password);
       if (result is LoginOk) {
         _markAuthenticated();
-        return true;
+        return (signedIn: true, message: null);
       }
-      // A code is required, so this cannot be completed unattended.
-      return false;
-    } catch (_) {
-      return false;
+      // A code is required, so this cannot be completed unattended — but there
+      // is nothing wrong with the password, so nothing to report either.
+      return (signedIn: false, message: null);
+    } catch (e) {
+      return (signedIn: false, message: _replayedLoginMessage(e));
     }
   }
 
@@ -137,7 +174,14 @@ class AuthNotifier extends Notifier<AuthState> {
   /// renew it in the background; only forces the login screen if that fails.
   Future<void> handleSessionExpired() async {
     final stored = await _credentials.read();
-    if (stored != null && await _attemptSilentLogin(stored)) return;
+    if (stored != null) {
+      final attempt = await _attemptSilentLogin(stored);
+      if (attempt.signedIn) return;
+      if (attempt.message != null) {
+        await logout(errorMessage: attempt.message);
+        return;
+      }
+    }
     await logout();
   }
 
@@ -168,7 +212,7 @@ class AuthNotifier extends Notifier<AuthState> {
       _pendingCredentials = null;
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        errorMessage: 'Identifiants incorrects',
+        errorMessage: _typedLoginMessage(e),
       );
     }
   }
@@ -193,6 +237,8 @@ class AuthNotifier extends Notifier<AuthState> {
       await _persistPendingCredentials();
       _markAuthenticated();
     } catch (e) {
+      // An expired password cannot reach this step: the site stops at its reset
+      // form without ever sending a code, so `login` catches that case.
       // Keep the interim state so the student can retype the code.
       state = pending.copyWith(
         status: AuthStatus.otpPending,
@@ -203,13 +249,14 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Signing out is explicit, so the remembered login is discarded too —
   /// otherwise the app would immediately sign itself back in.
-  Future<void> logout() async {
+  Future<void> logout({String? errorMessage}) async {
     _pendingCredentials = null;
     await _sessions.clear();
     await _credentials.clear();
     state = AuthState(
       status: AuthStatus.unauthenticated,
       sessionGeneration: state.sessionGeneration + 1,
+      errorMessage: errorMessage,
     );
   }
 }

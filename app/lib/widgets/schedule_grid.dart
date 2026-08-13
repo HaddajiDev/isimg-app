@@ -58,11 +58,21 @@ class ScheduleGrid extends StatelessWidget {
     return [for (var day = 1; day <= latest; day++) day];
   }
 
-  Seance? _at(int weekday, String slot) {
+  List<Seance> _at(int weekday, String slot) => [
+        for (final seance in sessions)
+          if (seance.weekday == weekday && seance.slot == slot) seance,
+      ];
+
+  /// How many classes the busiest cell of a slot holds. A row with a doubled-up
+  /// cell grows for every slot column so the pinned times stay level with it.
+  int _stackDepth(String slot) {
+    final perDay = <int, int>{};
     for (final seance in sessions) {
-      if (seance.weekday == weekday && seance.slot == slot) return seance;
+      if (seance.slot == slot) {
+        perDay[seance.weekday] = (perDay[seance.weekday] ?? 0) + 1;
+      }
     }
-    return null;
+    return perDay.values.fold(1, (deepest, n) => n > deepest ? n : deepest);
   }
 
   /// The weekday column that is today, or null when the displayed week isn't
@@ -95,6 +105,9 @@ class ScheduleGrid extends StatelessWidget {
     final weekdays = _weekdays;
     final todayWeekday = _todayWeekday(weekdays);
     final currentSlot = _currentSlot(slots, todayWeekday);
+    final heights = {
+      for (final slot in slots) slot: _rowHeight * _stackDepth(slot),
+    };
 
     // The slot column sits outside the horizontal scroll view so the times stay
     // readable however far right the week is scrolled; only the day columns move.
@@ -116,7 +129,11 @@ class ScheduleGrid extends StatelessWidget {
                 children: [
                   const _SlotHeaderCell(),
                   for (final slot in slots)
-                    _SlotCell(slot: slot, isCurrent: slot == currentSlot),
+                    _SlotCell(
+                      slot: slot,
+                      isCurrent: slot == currentSlot,
+                      height: heights[slot]!,
+                    ),
                 ],
               ),
               Expanded(
@@ -136,9 +153,10 @@ class ScheduleGrid extends StatelessWidget {
                           children: [
                             for (final weekday in weekdays)
                               _GridCell(
-                                seance: _at(weekday, slot),
+                                seances: _at(weekday, slot),
                                 isToday: weekday == todayWeekday,
                                 isCurrentSlot: slot == currentSlot,
+                                height: heights[slot]!,
                               ),
                           ],
                         ),
@@ -244,8 +262,9 @@ class _HeaderRow extends StatelessWidget {
 class _SlotCell extends StatelessWidget {
   final String slot;
   final bool isCurrent;
+  final double height;
 
-  const _SlotCell({required this.slot, required this.isCurrent});
+  const _SlotCell({required this.slot, required this.isCurrent, required this.height});
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +273,7 @@ class _SlotCell extends StatelessWidget {
 
     return Container(
       width: ScheduleGrid._slotColumnWidth,
-      height: ScheduleGrid._rowHeight,
+      height: height,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isCurrent ? AppColors.purpleGlow : AppColors.surfaceRaised,
@@ -283,11 +302,17 @@ class _SlotCell extends StatelessWidget {
 }
 
 class _GridCell extends StatelessWidget {
-  final Seance? seance;
+  final List<Seance> seances;
   final bool isToday;
   final bool isCurrentSlot;
+  final double height;
 
-  const _GridCell({this.seance, required this.isToday, required this.isCurrentSlot});
+  const _GridCell({
+    required this.seances,
+    required this.isToday,
+    required this.isCurrentSlot,
+    required this.height,
+  });
 
   /// Colour per kind of class, so a week can be read at a glance. The school's
   /// own palette is not reused: it is light-theme pastel and unreadable here.
@@ -300,7 +325,6 @@ class _GridCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = seance;
     // Crosshair effect: a faint wash along today's column and the current
     // row, with their intersection — the actual "happening now" cell —
     // reading strongest since both apply there.
@@ -308,7 +332,7 @@ class _GridCell extends StatelessWidget {
 
     return Container(
       width: ScheduleGrid._dayColumnWidth,
-      height: ScheduleGrid._rowHeight,
+      height: height,
       decoration: BoxDecoration(
         color: washAlpha > 0 ? AppColors.purple.withValues(alpha: washAlpha) : null,
         border: Border(
@@ -316,7 +340,18 @@ class _GridCell extends StatelessWidget {
           top: BorderSide(color: AppColors.border),
         ),
       ),
-      child: current == null ? null : _SeanceBlock(seance: current, tint: _tint(current.type)),
+      // Two classes booked into one slot is the school's doing, not a parse
+      // error, so both are shown rather than one quietly winning.
+      child: seances.isEmpty
+          ? null
+          : Column(
+              children: [
+                for (final seance in seances)
+                  Expanded(
+                    child: _SeanceBlock(seance: seance, tint: _tint(seance.type)),
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -343,15 +378,47 @@ class _SeanceBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (prefix.isNotEmpty)
-            Text(
-              prefix,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.6,
-                color: tint,
-              ),
+          if (prefix.isNotEmpty || seance.rattrapage)
+            Row(
+              children: [
+                if (prefix.isNotEmpty)
+                  Text(
+                    prefix,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: tint,
+                    ),
+                  ),
+                if (seance.rattrapage) ...[
+                  if (prefix.isNotEmpty) const SizedBox(width: 4),
+                  // Worth its own marker: a make-up class sits at a time the
+                  // student has no habit of showing up for.
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(
+                        // The site's own word, not an abbreviation: it is the
+                        // one label a student must not have to decode.
+                        'RATTRAPAGE',
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           Expanded(
             child: Text(

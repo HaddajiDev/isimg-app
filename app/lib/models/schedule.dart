@@ -2,18 +2,19 @@ import 'seance.dart';
 
 class Schedule {
   final String? weekLabel;
-  final bool hasSessions;
-  final String? rawContentHtml;
 
-  /// Parsed classes, when they could be extracted. Empty means "not parsed" —
-  /// which is still the case for real data, so the screen falls back to a
-  /// summary rather than claiming the week is free.
+  /// False only when the site printed its "nothing scheduled" placeholder for
+  /// this week. Distinct from an empty [sessions] — that also happens when the
+  /// grid was there but could not be read, which the screen reports as a
+  /// failure rather than as a free week.
+  final bool hasSessions;
+
+  /// The classes read off the timetable, in the site's own order.
   final List<Seance> sessions;
 
   Schedule({
     this.weekLabel,
     required this.hasSessions,
-    this.rawContentHtml,
     this.sessions = const [],
   });
 
@@ -21,7 +22,6 @@ class Schedule {
     return Schedule(
       weekLabel: json['weekLabel'] as String?,
       hasSessions: json['hasSessions'] as bool? ?? false,
-      rawContentHtml: json['rawContentHtml'] as String?,
       sessions: (json['sessions'] as List<dynamic>? ?? [])
           .map((s) => Seance.fromJson(s as Map<String, dynamic>))
           .toList(),
@@ -32,7 +32,6 @@ class Schedule {
   Map<String, dynamic> toJson() => {
         'weekLabel': weekLabel,
         'hasSessions': hasSessions,
-        'rawContentHtml': rawContentHtml,
         'sessions': sessions.map((s) => s.toJson()).toList(),
       };
 }

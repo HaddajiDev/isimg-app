@@ -142,6 +142,15 @@ class IsimgClient implements ApiClient {
     final redirect = _extractMetaRefreshUrl(loginBody);
     if (redirect == null) throw ApiException('invalid_credentials', statusCode: 401);
 
+    // The password was right, but the site has expired it: it answers with its
+    // own reset form at /fra/intranet/changepwd and stops there — no 2FA step
+    // and no emailed code. That redirect is neither the login page nor
+    // verify_2fa, so it used to fall through to "logged in" and store a session
+    // that could never read a page, which then looked like a lapsed session.
+    if (redirect.contains('changepwd')) {
+      throw ApiException('password_expired', statusCode: 403);
+    }
+
     if (redirect.contains('verify_2fa')) {
       final otpPage = _body(await _send(
         Uri.parse(_base).resolve(redirect).toString(),

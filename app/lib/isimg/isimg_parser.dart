@@ -5,6 +5,7 @@ import '../models/grade_tree.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
+import '../models/seance.dart';
 
 /// Turns ISIMG's HTML into the app's models.
 ///
@@ -308,13 +309,112 @@ class IsimgParser {
     // Month names carry accents, so \w+ would not match "août".
     final week = RegExp(r'(\d{2}\s*→\s*\d{2}\s+\p{L}+\s+\d{4})', unicode: true)
         .firstMatch(body);
-    final noSessions =
-        body.contains('Aucune séance') || body.contains('Aucun cours cette semaine');
 
     return Schedule(
       weekLabel: week?[1],
-      hasSessions: !noSessions,
-      rawContentHtml: doc.querySelector('#desktop-view')?.innerHtml,
+      hasSessions: !_declaresFreeWeek(doc),
+      sessions: _parseScheduleGrid(doc),
+    );
+  }
+
+  /// True when the site printed its "nothing scheduled" placeholder instead of
+  /// a grid.
+  ///
+  /// Scoped to the desktop view on purpose: the mobile view carries the same
+  /// wording in a permanently-hidden `#mobileEmpty` block that JavaScript
+  /// reveals for whichever day the student taps. Searching the whole body for
+  /// it therefore reports *every* week as free, however full it is.
+  bool _declaresFreeWeek(Document doc) {
+    final text = doc.querySelector('#desktop-view')?.text ?? '';
+    return text.contains('Aucun cours') || text.contains('Aucune séance');
+  }
+
+  /// Reads the week out of the desktop timetable.
+  ///
+  /// It is a flat CSS grid rather than a table, so there is no row or cell
+  /// nesting to walk: the children run corner cell, one sticky header per day,
+  /// then repeating groups of [slot label, one cell per day]. Day count comes
+  /// from the header block rather than being assumed to be six, and a cell may
+  /// hold more than one class.
+  List<Seance> _parseScheduleGrid(Document doc) {
+    final view = doc.querySelector('#desktop-view');
+    if (view == null) return const [];
+
+    final grid = view
+        .querySelectorAll('div')
+        .where((div) => (div.attributes['class'] ?? '').contains('grid-cols-'))
+        .firstOrNull;
+    if (grid == null) return const [];
+
+    final cells = grid.children;
+    final headerCount = cells
+        .takeWhile((e) => (e.attributes['class'] ?? '').contains('sticky'))
+        .length;
+    // The corner cell above the slot column is sticky too, hence the -1.
+    final dayColumns = headerCount - 1;
+    if (dayColumns < 1) return const [];
+
+    final sessions = <Seance>[];
+    // Reading up to `i + dayColumns`, so the last full row must end inside the
+    // list — truncated markup then yields fewer classes instead of throwing.
+    for (var i = headerCount; i + dayColumns < cells.length; i += dayColumns + 1) {
+      final slot = _normaliseSlot(cells[i].text);
+      if (slot.isEmpty) continue;
+
+      for (var day = 0; day < dayColumns; day++) {
+        for (final card in cells[i + 1 + day].children) {
+          final seance = _parseSeanceCard(card, weekday: day + 1, slot: slot);
+          if (seance != null) sessions.add(seance);
+        }
+      }
+    }
+    return sessions;
+  }
+
+  /// "08:15 → 09:45" as the site writes it, into the "08:15-09:45" shape the
+  /// app orders and matches slots by. Built from the times themselves so the
+  /// separator — arrow, dash or otherwise — does not matter.
+  static String _normaliseSlot(String raw) {
+    final times = RegExp(r'\d{1,2}[:h]\d{2}')
+        .allMatches(raw)
+        .map((m) => m[0]!)
+        .toList();
+    if (times.isEmpty) return '';
+    return times.length >= 2 ? '${times[0]}-${times[1]}' : times.first;
+  }
+
+  Seance? _parseSeanceCard(Element card, {required int weekday, required String slot}) {
+    final matiere = _squash(card.querySelector('p')?.text ?? '');
+    if (matiere.isEmpty) return null;
+
+    // Cours / TD / TP sits in the card's only bold span; the colour classes
+    // encode the same thing but the word is what the school actually prints.
+    final badge = card
+        .querySelectorAll('span')
+        .where((s) => (s.attributes['class'] ?? '').contains('font-bold'))
+        .firstOrNull;
+
+    // Room and teacher are both plain truncating spans, told apart only by the
+    // icon each carries rather than by their order.
+    String? labelled(String icon) {
+      for (final span in card.querySelectorAll('span')) {
+        if (span.querySelector('i.$icon') == null) continue;
+        final text = _squash(span.text);
+        if (text.isNotEmpty) return text;
+      }
+      return null;
+    }
+
+    return Seance(
+      weekday: weekday,
+      slot: slot,
+      type: SeanceType.parse(badge == null ? null : _squash(badge.text)),
+      matiere: matiere,
+      salle: labelled('fa-location-dot'),
+      enseignant: labelled('fa-user'),
+      // A make-up class lands outside the usual timetable, so it is worth
+      // carrying through to the grid rather than reading as a normal session.
+      rattrapage: card.text.contains('RATTRAPAGE'),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/credential_store.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -196,6 +197,109 @@ void main() {
     expect(container.read(authProvider).status, AuthStatus.unauthenticated);
     // Logging out clears them, so the app cannot loop on a dead password.
     expect(store.stored, isNull);
+  });
+
+  test('expiry surfaces "wrong credentials" when the site explicitly rejects them',
+      () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'old-pw');
+    final api = ScriptedApi([
+      LoginOk(),
+      ApiException('invalid_credentials', statusCode: 401),
+    ]);
+    final container = makeContainer(api, store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).handleSessionExpired();
+
+    final state = container.read(authProvider);
+    expect(state.status, AuthStatus.unauthenticated);
+    expect(state.errorMessage, 'Identifiants incorrects');
+    expect(store.stored, isNull);
+  });
+
+  test('expiry stays silent when renewal fails for a reason unrelated to the password',
+      () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'pw');
+    final api = ScriptedApi([
+      LoginOk(),
+      ApiException('network_error'),
+    ]);
+    final container = makeContainer(api, store);
+    await settle(container);
+
+    await container.read(authProvider.notifier).handleSessionExpired();
+
+    final state = container.read(authProvider);
+    expect(state.status, AuthStatus.unauthenticated);
+    expect(state.errorMessage, isNull);
+  });
+
+  test('a startup silent login rejected by the site reports "wrong credentials"',
+      () async {
+    final store = FakeCredentialStore()
+      ..stored = const Credentials(username: '2024666', password: 'wrong');
+    final api = ScriptedApi([ApiException('invalid_credentials', statusCode: 401)]);
+    final container = makeContainer(api, store);
+
+    final state = await settle(container);
+
+    expect(state.status, AuthStatus.unauthenticated);
+    expect(state.errorMessage, 'Identifiants incorrects');
+    expect(store.stored, isNull);
+  });
+
+  group('an expired ISIMG password', () {
+    const expired = 'Votre mot de passe ISIMG a expiré. Changez-le sur '
+        'isimg.rnu.tn, puis reconnectez-vous.';
+
+    test('is explained rather than blamed on the credentials', () async {
+      final store = FakeCredentialStore();
+      final api = ScriptedApi([ApiException('password_expired', statusCode: 403)]);
+      final container = makeContainer(api, store);
+      await settle(container);
+
+      await container
+          .read(authProvider.notifier)
+          .login('2024666', 'right-but-expired', rememberMe: true);
+
+      final state = container.read(authProvider);
+      expect(state.status, AuthStatus.unauthenticated);
+      // "Identifiants incorrects" would send them retyping a correct password.
+      expect(state.errorMessage, expired);
+      // Nothing is remembered, since the login never completed.
+      expect(store.stored, isNull);
+    });
+
+    test('is explained when it surfaces during a silent startup login', () async {
+      final store = FakeCredentialStore()
+        ..stored = const Credentials(username: '2024666', password: 'pw');
+      final api = ScriptedApi([ApiException('password_expired', statusCode: 403)]);
+      final container = makeContainer(api, store);
+
+      final state = await settle(container);
+
+      expect(state.status, AuthStatus.unauthenticated);
+      expect(state.errorMessage, expired);
+      // Kept replaying it would just loop against the site's reset form.
+      expect(store.stored, isNull);
+    });
+
+    test('is explained when it surfaces while renewing a lapsed session', () async {
+      final store = FakeCredentialStore()
+        ..stored = const Credentials(username: '2024666', password: 'pw');
+      final api = ScriptedApi([LoginOk(), ApiException('password_expired', statusCode: 403)]);
+      final container = makeContainer(api, store);
+      await settle(container);
+
+      await container.read(authProvider.notifier).handleSessionExpired();
+
+      final state = container.read(authProvider);
+      expect(state.status, AuthStatus.unauthenticated);
+      expect(state.errorMessage, expired);
+    });
+
   });
 
   test('expiry cannot be recovered unattended when a new OTP is demanded', () async {

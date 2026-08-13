@@ -149,7 +149,6 @@ class FakeApiClient implements ApiClient {
     return Schedule.fromJson({
       'weekLabel': 'semaine $week',
       'hasSessions': false,
-      'rawContentHtml': null,
     });
   }
 }

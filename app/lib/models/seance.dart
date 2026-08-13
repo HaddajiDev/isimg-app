@@ -1,8 +1,7 @@
 /// A single class on the timetable.
 ///
-/// The site renders these as coloured cells in a day × time-slot grid. Only the
-/// demo account produces them so far: the real parser is still pending a
-/// captured week that actually has classes in it.
+/// The site renders these as coloured cells in a day × time-slot grid, which
+/// [IsimgParser.parseSchedule] reads back into these.
 enum SeanceType {
   cours,
   td,
@@ -37,6 +36,10 @@ class Seance {
   final String? enseignant;
   final String? salle;
 
+  /// A make-up session, badged RATTRAPAGE on the site. These land outside the
+  /// usual timetable, so they are the ones most easily missed.
+  final bool rattrapage;
+
   const Seance({
     required this.weekday,
     required this.slot,
@@ -44,6 +47,7 @@ class Seance {
     required this.matiere,
     this.enseignant,
     this.salle,
+    this.rattrapage = false,
   });
 
   /// Minutes since midnight, used to order the slot rows. Falls back to a large
@@ -62,6 +66,7 @@ class Seance {
         matiere: json['matiere'] as String? ?? '',
         enseignant: json['enseignant'] as String?,
         salle: json['salle'] as String?,
+        rattrapage: json['rattrapage'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -71,5 +76,6 @@ class Seance {
         'matiere': matiere,
         'enseignant': enseignant,
         'salle': salle,
+        'rattrapage': rattrapage,
       };
 }

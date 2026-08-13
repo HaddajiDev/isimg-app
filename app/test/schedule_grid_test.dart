@@ -60,6 +60,49 @@ void main() {
     expect(find.text('S08'), findsOneWidget);
   });
 
+  testWidgets('shows both classes when the school books two into one cell',
+      (tester) async {
+    tester.view.physicalSize = const Size(2400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(wrap(ScheduleGrid(
+      sessions: const [
+        Seance(weekday: 1, slot: '08:15-09:45', type: SeanceType.cours, matiere: 'Premier'),
+        Seance(weekday: 1, slot: '08:15-09:45', type: SeanceType.tp, matiere: 'Second'),
+      ],
+      weekStart: DateTime(2024, 10, 21),
+    )));
+
+    // Neither may quietly win: a double booking is the timetable's own doing.
+    expect(find.text('Premier'), findsOneWidget);
+    expect(find.text('Second'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('marks a make-up session so it is not read as a normal class',
+      (tester) async {
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(wrap(ScheduleGrid(
+      sessions: const [
+        Seance(
+          weekday: 1,
+          slot: '08:15-09:45',
+          type: SeanceType.tp,
+          matiere: 'Architecture web',
+          rattrapage: true,
+        ),
+        Seance(weekday: 2, slot: '08:15-09:45', type: SeanceType.tp, matiere: 'Infographie'),
+      ],
+      weekStart: DateTime(2024, 10, 21),
+    )));
+
+    expect(find.text('RATTRAPAGE'), findsOneWidget);
+  });
+
   testWidgets('orders slot rows by start time regardless of input order',
       (tester) async {
     tester.view.physicalSize = const Size(2400, 2400);

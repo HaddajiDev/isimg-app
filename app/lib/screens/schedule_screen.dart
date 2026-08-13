@@ -5,7 +5,6 @@ import '../models/schedule.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_card.dart';
 import '../widgets/schedule_grid.dart';
 import '../widgets/state_views.dart';
 
@@ -132,40 +131,23 @@ class _ScheduleContent extends StatelessWidget {
       return ScheduleGrid(sessions: schedule.sessions, weekStart: weekStart);
     }
 
-    // Falls through for real data: the week has classes but the markup for
-    // them has never been captured, so there is nothing to lay out yet.
-    // Better to say so than to invent a grid.
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        AppCard(
-          accent: AppColors.purple,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.event_rounded, color: AppColors.purple, size: 20),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Séances programmées',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Cette semaine contient des séances. '
-                'L\'affichage détaillé arrive bientôt.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
+    // The site did not call this week free, yet nothing could be read out of
+    // its grid — so the markup has changed shape. Saying so beats showing an
+    // empty week the student would take at face value.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: const MessageView(
+            icon: Icons.help_outline_rounded,
+            title: 'Emploi illisible',
+            subtitle: 'Des séances sont prévues mais n\'ont pas pu être lues. '
+                'Consultez le site de l\'ISIMG pour cette semaine.',
+            tint: AppColors.warning,
           ),
         ),
-      ],
+      ),
     );
   }
 }
