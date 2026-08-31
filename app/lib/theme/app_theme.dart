@@ -1,35 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Design tokens for the app's dark aesthetic: deep OLED base with a dark
-/// purple primary and dark green accent used for positive/valid indicators.
 abstract final class AppColors {
-  // Surfaces, darkest to lightest.
   static const canvas = Color(0xFF08060D);
   static const surface = Color(0xFF12101A);
   static const surfaceRaised = Color(0xFF1A1725);
   static const border = Color(0xFF262233);
   static const borderStrong = Color(0xFF35304A);
 
-  // Dark purple — primary brand.
   static const purple = Color(0xFF7C5CFF);
   static const purpleDeep = Color(0xFF4B2FA8);
   static const purpleGlow = Color(0x337C5CFF);
 
-  // Dark green — success / passing grades.
   static const green = Color(0xFF2FBF71);
   static const greenDeep = Color(0xFF1B6B41);
   static const greenGlow = Color(0x332FBF71);
 
-  // Status.
   static const danger = Color(0xFFE5484D);
   static const warning = Color(0xFFE0A030);
 
-  /// Neutral-informational accent. Needed a third colour distinct from both
-  /// brand hues to tell the timetable's Cours / TD / TP apart.
   static const info = Color(0xFF3B9EFF);
 
-  // Text.
   static const textPrimary = Color(0xFFF4F2FA);
   static const textSecondary = Color(0xFFA9A3BF);
   static const textMuted = Color(0xFF6F6885);
@@ -51,7 +42,6 @@ abstract final class AppRadius {
   static const pill = 999.0;
 }
 
-/// Minimum size for any tappable control (accessibility).
 const double kMinTouchTarget = 44.0;
 
 ThemeData buildAppTheme() {
@@ -69,7 +59,6 @@ ThemeData buildAppTheme() {
     outline: AppColors.border,
   );
 
-  // Fira Sans / Fira Code per the design system's dashboard pairing.
   final bodyFont = GoogleFonts.firaSans().fontFamily!;
   final monoFont = GoogleFonts.firaCode().fontFamily!;
 
@@ -86,7 +75,7 @@ ThemeData buildAppTheme() {
           headlineMedium: baseTextTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           titleLarge: baseTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           titleMedium: baseTextTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          // 16px minimum for body text on mobile.
+
           bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.5),
           bodyMedium: baseTextTheme.bodyMedium?.copyWith(fontSize: 14, height: 1.5),
         )
@@ -236,7 +225,6 @@ ThemeData buildAppTheme() {
   );
 }
 
-/// Exposes the monospace family for numeric/tabular values (grades, averages).
 @immutable
 class AppTypography extends ThemeExtension<AppTypography> {
   final String monoFamily;

@@ -37,7 +37,6 @@ void main() {
     });
 
     test('distinguishes identically-labelled épreuves by position', () {
-      // CC subjects carry two "DS (0.4)" rows; only the index separates them.
       expect(key('Anglais 3', 0).storageKey, isNot(key('Anglais 3', 2).storageKey));
     });
 
@@ -65,7 +64,7 @@ void main() {
 
       expect(epreuves[1].note, 14);
       expect(epreuves[1].isManual, isTrue);
-      // The official note is untouched and stays unmarked.
+
       expect(epreuves[0].note, 9.5);
       expect(epreuves[0].isManual, isFalse);
     });
@@ -85,7 +84,6 @@ void main() {
     });
 
     test('never overwrites a recorded absence', () {
-      // An absence is a real zero, not an empty slot to fill.
       final semesters = tree([
         const Matiere(
           libelle: 'Vision',
@@ -207,7 +205,6 @@ void main() {
     });
 
     test('a single-semester year still yields an annual average', () {
-      // Some années (and years in progress) only ever have S1.
       final semesters = tree([
         const Matiere(
           libelle: 'Qualité',

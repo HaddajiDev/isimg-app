@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/credential_store.dart';
 import 'package:isimg_app/core/grades_cache.dart';
 import 'package:isimg_app/main.dart';
@@ -17,8 +19,6 @@ import 'package:isimg_app/providers/api_provider.dart';
 import 'package:isimg_app/providers/auth_provider.dart';
 import 'package:isimg_app/providers/grades_provider.dart';
 
-/// In-memory stand-in with a remembered login, so `_restoreSession` takes the
-/// silent-relogin path rather than finding a stored session outright.
 class _RememberingCredentialStore extends CredentialStore {
   @override
   Future<Credentials?> read() async =>
@@ -31,10 +31,13 @@ class _RememberingCredentialStore extends CredentialStore {
   Future<void> clear() async {}
 }
 
-/// A login that only completes once the test says so — real network calls
-/// take real wall-clock time, which is exactly the window this feature is
-/// about.
 class _ControllableApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   final _loginCompleter = Completer<LoginResult>();
   int gradesCalls = 0;
 
@@ -134,15 +137,9 @@ void main() {
     var settled = false;
     unawaited(container.read(gradesProvider.future).then((_) => settled = true));
 
-    // Still nothing after a beat — the provider is genuinely waiting, not
-    // failing silently.
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(settled, isFalse);
 
-    // Completing the login rebuilds gradesProvider (it watches authProvider),
-    // which produces a brand new .future for that new build — the one
-    // grabbed above belongs to the abandoned pending build and would never
-    // resolve, so the real result has to be re-read after the rebuild.
     api.completeLogin();
     await Future<void>.delayed(Duration.zero);
     final grades = await container.read(gradesProvider.future);
@@ -167,12 +164,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(container.read(authProvider).status, AuthStatus.reauthenticating);
-    // The login form must not be showing — that would mean the student is
-    // being asked to sign in again for no reason while this resolves.
+
     expect(find.text('Se connecter'), findsNothing);
-    // Emploi is the landing tab; its app bar subtitle is unique to the shell
-    // (the bottom nav also has a label reading "Emploi", so that alone would
-    // be ambiguous).
+
     expect(find.text('Votre semaine'), findsOneWidget);
 
     api.completeLogin();

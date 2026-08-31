@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/grades.dart';
 
-/// A relevé served from the cache, with when it was captured.
 class CachedGrades {
   final Grades grades;
   final DateTime capturedAt;
@@ -12,14 +11,9 @@ class CachedGrades {
   const CachedGrades({required this.grades, required this.capturedAt});
 }
 
-/// Keeps the last fetched relevé on the device, per année/session, so
-/// switching tabs or reopening the app shows something instantly instead of a
-/// blank skeleton while the network catches up.
 class GradesCache {
   static const _prefix = 'grades_v1:';
 
-  /// Keyed by the exact année/session codes requested, so different picks
-  /// don't overwrite each other.
   String _key(String au, String ss) => '$_prefix$au|$ss';
 
   Future<void> save(String au, String ss, Grades grades) async {
@@ -33,7 +27,6 @@ class GradesCache {
         }),
       );
     } catch (_) {
-      // Caching is an optimisation; a failure here must not break the fetch.
     }
   }
 
@@ -50,7 +43,6 @@ class GradesCache {
 
       return CachedGrades(grades: Grades.fromJson(grades), capturedAt: capturedAt);
     } catch (_) {
-      // A corrupt entry behaves as a miss rather than breaking the screen.
       return null;
     }
   }
@@ -62,7 +54,6 @@ class GradesCache {
         await prefs.remove(key);
       }
     } catch (_) {
-      // Nothing to do; the entries were already unreadable.
     }
   }
 }

@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/credential_store.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -12,7 +14,6 @@ import 'package:isimg_app/models/schedule.dart';
 import 'package:isimg_app/providers/api_provider.dart';
 import 'package:isimg_app/providers/auth_provider.dart';
 
-/// In-memory stand-in so tests never touch a real keystore.
 class FakeCredentialStore extends CredentialStore {
   Credentials? stored;
   int saveCount = 0;
@@ -38,7 +39,12 @@ class FakeCredentialStore extends CredentialStore {
 }
 
 class ScriptedApi implements ApiClient {
-  /// Queue of outcomes; each login consumes one.
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   final List<Object> outcomes;
   final List<(String, String)> attempts = [];
 
@@ -79,7 +85,6 @@ ProviderContainer makeContainer(ScriptedApi api, FakeCredentialStore store) {
   return container;
 }
 
-/// Waits for the notifier to settle out of its transient states.
 Future<AuthState> settle(ProviderContainer container) async {
   for (var i = 0; i < 40; i++) {
     await Future<void>.delayed(Duration.zero);
@@ -137,7 +142,7 @@ void main() {
 
     await container.read(authProvider.notifier).login('2024666', 'pw', rememberMe: true);
     expect(container.read(authProvider).status, AuthStatus.otpPending);
-    // Not proven yet, so nothing is written.
+
     expect(store.stored, isNull);
 
     await container.read(authProvider.notifier).verifyOtp('123456');
@@ -154,7 +159,7 @@ void main() {
     final state = await settle(container);
 
     expect(state.status, AuthStatus.authenticated);
-    // The stored credentials were actually replayed, not just assumed valid.
+
     expect(api.attempts, [('2024666', 'pw')]);
   });
 
@@ -166,7 +171,7 @@ void main() {
   test('an expired session is renewed silently', () async {
     final store = FakeCredentialStore()
       ..stored = const Credentials(username: '2024666', password: 'pw');
-    // First login at startup, second when the session lapses.
+
     final api = ScriptedApi([LoginOk(), LoginOk()]);
     final container = makeContainer(api, store);
     await settle(container);
@@ -176,11 +181,10 @@ void main() {
 
     final state = container.read(authProvider);
     expect(state.status, AuthStatus.authenticated);
-    // A second login ran and produced a new session, which is what makes the
-    // dependent providers refetch rather than serving the stale error.
+
     expect(api.attempts.length, 2);
     expect(state.sessionGeneration, greaterThan(before));
-    // Still remembered, so the next lapse recovers too.
+
     expect(store.stored, isNotNull);
   });
 
@@ -195,7 +199,7 @@ void main() {
     await container.read(authProvider.notifier).handleSessionExpired();
 
     expect(container.read(authProvider).status, AuthStatus.unauthenticated);
-    // Logging out clears them, so the app cannot loop on a dead password.
+
     expect(store.stored, isNull);
   });
 
@@ -266,9 +270,9 @@ void main() {
 
       final state = container.read(authProvider);
       expect(state.status, AuthStatus.unauthenticated);
-      // "Identifiants incorrects" would send them retyping a correct password.
+
       expect(state.errorMessage, expired);
-      // Nothing is remembered, since the login never completed.
+
       expect(store.stored, isNull);
     });
 
@@ -282,7 +286,7 @@ void main() {
 
       expect(state.status, AuthStatus.unauthenticated);
       expect(state.errorMessage, expired);
-      // Kept replaying it would just loop against the site's reset form.
+
       expect(store.stored, isNull);
     });
 
@@ -299,7 +303,6 @@ void main() {
       expect(state.status, AuthStatus.unauthenticated);
       expect(state.errorMessage, expired);
     });
-
   });
 
   test('expiry cannot be recovered unattended when a new OTP is demanded', () async {
@@ -311,7 +314,6 @@ void main() {
 
     await container.read(authProvider.notifier).handleSessionExpired();
 
-    // A code cannot be typed by the app, so the student is asked to sign in.
     expect(container.read(authProvider).status, AuthStatus.unauthenticated);
   });
 

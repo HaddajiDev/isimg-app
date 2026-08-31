@@ -17,7 +17,6 @@ import '../widgets/student_avatar.dart';
 
 const _calc = MoyenneCalculator();
 
-/// First letters of the first two words, e.g. "Haddaji Ahmed" -> "HA".
 String _initialsOf(String? name) {
   final words = (name ?? '').trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
   return words.map((w) => w[0].toUpperCase()).take(2).join();
@@ -59,8 +58,6 @@ class GradesScreen extends ConsumerWidget {
   }
 }
 
-/// Shown while [gradesProvider] is still loading: the last cached relevé for
-/// the selected année/session, if there is one, instead of a bare skeleton.
 class _GradesLoadingPlaceholder extends ConsumerWidget {
   const _GradesLoadingPlaceholder();
 
@@ -92,8 +89,6 @@ class _GradesLoadingPlaceholder extends ConsumerWidget {
   }
 }
 
-/// The relevé itself, shared between a fresh load and a cached seed so both
-/// render identically.
 class _GradesContent extends ConsumerWidget {
   final Grades grades;
 
@@ -115,8 +110,6 @@ class _GradesContent extends ConsumerWidget {
         '';
     final manual = ref.watch(manualNotesProvider).value ?? ManualNotes.empty;
 
-    // Student projections are layered on top of the fetched data; they can
-    // only fill slots the school left blank.
     final semesters = applyManualNotes(
       semesters: grades.semesters,
       manual: manual,
@@ -375,7 +368,7 @@ class _MatiereRow extends ConsumerWidget {
                     _EpreuveChip(
                       epreuve: matiere.epreuves[i],
                       monoFamily: mono,
-                      // Only slots the school hasn't filled can be simulated.
+
                       onEdit: matiere.epreuves[i].isEditable
                           ? () => _editNote(context, ref, i)
                           : null,
@@ -432,8 +425,6 @@ class _EpreuveChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (text, color) = switch (epreuve) {
-      // An absence is a scored zero, so it earns the failing colour rather
-      // than looking like a mark that has yet to arrive.
       Epreuve(absent: true) => ('Abs.', AppColors.danger),
       Epreuve(isManual: true, note: final note?) => (_trim(note), AppColors.purple),
       Epreuve(note: final note?) => (_trim(note), AppColors.textPrimary),
@@ -472,7 +463,7 @@ class _EpreuveChip extends StatelessWidget {
               color: color,
             ),
           ),
-          // Only ungraded slots invite input, so the affordance appears there.
+
           if (onEdit != null) ...[
             const SizedBox(width: AppSpacing.xs),
             Icon(
@@ -501,7 +492,6 @@ class _EpreuveChip extends StatelessWidget {
   }
 }
 
-/// Summarises how many projections are active and offers a single undo.
 class _ManualNotesBanner extends StatelessWidget {
   final int count;
   final VoidCallback onClear;
@@ -564,8 +554,6 @@ class _FilterBar extends ConsumerWidget {
     final currentAu = effectiveCode(auPick, grades.currentAu, grades.annees);
     final currentSs = effectiveCode(ssPick, grades.currentSs, grades.sessions);
 
-    // Both codes are pinned on any change: the upstream form only honours
-    // f_au and f_ss when they arrive together.
     void select({String? au, String? ss}) {
       ref.read(selectedAuProvider.notifier).state = au ?? currentAu;
       ref.read(selectedSsProvider.notifier).state = ss ?? currentSs;
@@ -665,8 +653,6 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // The published moyenne wins; otherwise fall back to our own computation
-    // so students see a running estimate during the year.
     final official = double.tryParse(grades.moyenneGenerale ?? '');
     final average = official != null
         ? Average(official, AverageSource.official)
@@ -772,7 +758,6 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-/// Drops a trailing ".0" so coefficients read "3" and "1.5".
 String _trim(double value) {
   return value == value.roundToDouble()
       ? value.toStringAsFixed(0)

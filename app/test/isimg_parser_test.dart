@@ -34,7 +34,7 @@ void main() {
       expect(grades.annees.map((o) => o.label).toList(),
           ['2026-2027', '2025-2026', '2024-2025', '2023-2024']);
       expect(grades.annees.first.code, '13');
-      // This capture is the Contrôle view, which the site marks selected.
+
       expect(parser.selectedCode(grades.sessions), '2');
     });
 
@@ -73,15 +73,12 @@ void main() {
     });
 
     test('reproduces the published moyenne from the parsed tree', () {
-      // End-to-end proof the port is faithful: the same arithmetic that matched
-      // the site before must still land on 10.56.
       final grades = parser.parseGrades(body);
       const calc = MoyenneCalculator();
 
       final annual = calc.annualAverage(grades.semesters);
       expect(annual.value, closeTo(10.56, 0.01));
 
-      // And every published unit average is reproduced exactly.
       for (final semestre in grades.semesters) {
         for (final unite in semestre.unites) {
           expect(calc.uniteAverage(unite).value, closeTo(unite.moyenne!, 0.055),
@@ -155,9 +152,6 @@ void main() {
     late final schedule = parser.parseSchedule(body);
 
     test('a full week is not mistaken for a free one', () {
-      // The mobile view carries a permanently-hidden "Aucune séance" block that
-      // JS reveals per day. Searching the whole body for it reported every week
-      // as free, so this full week rendered as "no classes".
       expect(body, contains('Aucune séance'));
       expect(schedule.hasSessions, isTrue);
     });
@@ -182,7 +176,6 @@ void main() {
     });
 
     test('tells room and teacher apart by their icons, not their order', () {
-      // Both are plain truncating spans; only the icon distinguishes them.
       for (final seance in schedule.sessions) {
         expect(seance.salle, isNot(contains(' ')),
             reason: 'a room is a code like A5 or Lab11, never a person');
@@ -217,8 +210,6 @@ void main() {
     });
 
     test('normalises the arrow-separated slot into the app\'s shape', () {
-      // The site prints "08:15 → 09:45"; ordering and slot matching both need
-      // the hyphen form.
       expect(body, contains('08:15 → 09:45'));
       final slots = {for (final s in schedule.sessions) s.slot};
       expect(slots, {
@@ -237,8 +228,6 @@ void main() {
     });
 
     test('survives markup truncated mid-row instead of throwing', () {
-      // A short read or a changed grid must degrade, not crash: the loop reads
-      // a whole row per step.
       final cut = body.substring(0, body.indexOf('11:30 → 13:00'));
       final partial = parser.parseSchedule(cut);
       expect(partial.sessions, isNotEmpty);
@@ -246,8 +235,6 @@ void main() {
     });
 
     test('keeps room and teacher apart when a class has no room', () {
-      // Reading them by position instead of by icon put the teacher's name in
-      // the room field as soon as one span was missing.
       final noRoom = body.replaceFirst(
         RegExp(r'<span class="truncate">\s*<i class="fa-solid fa-location-dot mr-1"></i>A5\s*</span>'),
         '',
@@ -269,9 +256,6 @@ void main() {
   });
 
   group('schedule grid shapes', () {
-    /// A minimal grid of the same shape the site emits: a corner cell, one
-    /// sticky header per day, then per row a slot label and one cell per day,
-    /// with a single class in each row's first day.
     String syntheticGrid({required int days, required int rows, int dropTrailing = 0}) {
       const card = '<div class="group border-l-4">'
           '<div class="flex"><p class="text-sm font-semibold">Algèbre</p>'
@@ -299,17 +283,12 @@ void main() {
     }
 
     test('a last row cut short does not throw', () {
-      // A whole row is read per step, so a row ending exactly at the list's end
-      // used to index one past it.
       final schedule = parser.parseSchedule(syntheticGrid(days: 6, rows: 5, dropTrailing: 1));
       expect(schedule.sessions, hasLength(4));
       expect(schedule.sessions.every((s) => s.weekday == 1), isTrue);
     });
 
     test('reads the day count off the header instead of assuming six', () {
-      // Assuming six columns misaligns every following row when the count
-      // differs — classes then land on the wrong days rather than going
-      // missing, which is the harder kind of wrong to notice.
       for (final days in [5, 6, 7]) {
         final schedule = parser.parseSchedule(syntheticGrid(days: days, rows: 4));
         expect(schedule.sessions, hasLength(4), reason: '$days-day week');
@@ -322,8 +301,6 @@ void main() {
 
   group('page guards', () {
     test('the homepage is not mistaken for a data page', () {
-      // Denied routes answer 200 with the generic homepage, so each guard has
-      // to reject it rather than trusting the status code.
       const homepage = '<html><head><title>ISIMG - Institut Supérieur</title>'
           '</head><body>rien</body></html>';
 
@@ -348,8 +325,6 @@ void main() {
     });
 
     test('an authenticated page is not mistaken for the login page', () {
-      // A wrong-credentials meta-refresh bounces back to this exact page, so
-      // the check only means anything if real data pages do not also trip it.
       expect(parser.looksLikeLoginPage(fixture('grades.html')), isFalse);
       expect(parser.looksLikeLoginPage(fixture('cursus.html')), isFalse);
       expect(parser.looksLikeLoginPage(fixture('schedule_empty.html')), isFalse);

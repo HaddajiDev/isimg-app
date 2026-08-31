@@ -3,13 +3,8 @@ import 'seance.dart';
 class Schedule {
   final String? weekLabel;
 
-  /// False only when the site printed its "nothing scheduled" placeholder for
-  /// this week. Distinct from an empty [sessions] — that also happens when the
-  /// grid was there but could not be read, which the screen reports as a
-  /// failure rather than as a free week.
   final bool hasSessions;
 
-  /// The classes read off the timetable, in the site's own order.
   final List<Seance> sessions;
 
   Schedule({
@@ -28,7 +23,6 @@ class Schedule {
     );
   }
 
-  /// Round-trips through the offline cache.
   Map<String, dynamic> toJson() => {
         'weekLabel': weekLabel,
         'hasSessions': hasSessions,

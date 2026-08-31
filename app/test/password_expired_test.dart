@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -14,8 +16,13 @@ import 'package:isimg_app/providers/api_provider.dart';
 import 'package:isimg_app/screens/login_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 
-/// Answers every login the way ISIMG answers one whose password has expired.
 class _ExpiredPasswordApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   var loginCalls = 0;
 
   @override
@@ -74,8 +81,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(api.loginCalls, 1);
-    // The password is correct, so "Identifiants incorrects" would send the
-    // student retyping it forever. The site is the only place to fix this.
+
     expect(
       find.textContaining('mot de passe ISIMG a expiré'),
       findsOneWidget,

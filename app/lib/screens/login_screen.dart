@@ -16,7 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
-  // Opt-in, and unavailable on web where there is no secure keystore.
+
   bool _rememberMe = false;
 
   @override
@@ -35,8 +35,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: DecoratedBox(
-        // Subtle purple bloom behind the form, per the dark-mode style's
-        // "minimal glow" guidance.
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(0, -0.7),
@@ -57,8 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // The artwork carries its own dark background and glow, so
-                          // it needs no container behind it on this canvas.
+
                           Center(
                             child: Image.asset(
                               'assets/logo.png',

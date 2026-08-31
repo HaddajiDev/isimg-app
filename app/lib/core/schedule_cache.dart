@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/schedule.dart';
 
-/// A week served from the cache, with when it was captured.
 class CachedSchedule {
   final Schedule schedule;
   final DateTime capturedAt;
@@ -12,12 +11,9 @@ class CachedSchedule {
   const CachedSchedule({required this.schedule, required this.capturedAt});
 }
 
-/// Keeps fetched weeks on the device so the timetable still opens without a
-/// connection — the thing a student most often needs when they have no signal.
 class ScheduleCache {
   static const _prefix = 'schedule_v1:';
 
-  /// Weeks are keyed by their Monday, so re-visiting one is a cache hit.
   String _key(String week) => '$_prefix$week';
 
   Future<void> save(String week, Schedule schedule) async {
@@ -31,7 +27,6 @@ class ScheduleCache {
         }),
       );
     } catch (_) {
-      // Caching is an optimisation; a failure here must not break the fetch.
     }
   }
 
@@ -51,7 +46,6 @@ class ScheduleCache {
         capturedAt: capturedAt,
       );
     } catch (_) {
-      // A corrupt entry behaves as a miss rather than breaking the screen.
       return null;
     }
   }
@@ -63,7 +57,6 @@ class ScheduleCache {
         await prefs.remove(key);
       }
     } catch (_) {
-      // Nothing to do; the entries were already unreadable.
     }
   }
 }

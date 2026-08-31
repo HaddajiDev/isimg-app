@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/grades_cache.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -18,8 +20,13 @@ Grades _grades(String label) => Grades.fromJson({
       'semesters': <dynamic>[],
     });
 
-/// Serves one relevé, then fails however the test asks.
 class FlakyApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   ApiException? failWith;
   int gradesCalls = 0;
   String label = 'relevé en ligne';
@@ -144,8 +151,6 @@ void main() {
     });
 
     test('an expired session is never masked by the cache', () async {
-      // Serving stale grades here would strand the student on a dead session
-      // instead of letting the app renew it.
       final api = FlakyApi();
       final container = makeContainer(api);
       await container.read(gradesProvider.future);

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Centred icon + message, used for empty and error states.
 class MessageView extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -63,7 +62,6 @@ class MessageView extends StatelessWidget {
   }
 }
 
-/// Pulsing placeholder block shown while content loads, so layout doesn't jump.
 class SkeletonBox extends StatefulWidget {
   final double height;
   final double? width;
@@ -84,7 +82,7 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    // Honour reduced-motion: hold a static placeholder instead of pulsing.
+
     if (!WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations) {
       _controller.repeat(reverse: true);
     }

@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
 import 'package:isimg_app/models/schedule.dart';
@@ -16,8 +18,13 @@ import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/student_avatar.dart';
 import 'package:isimg_app/widgets/version_footer.dart';
 
-/// Stands in for the backend so widget tests never touch the network.
 class FakeApiClient implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   String? lastAu;
   String? lastSs;
   int gradesCallCount = 0;
@@ -60,8 +67,7 @@ class FakeApiClient implements ApiClient {
                     {'libelle': 'Ex (0.7)', 'poids': 0.7, 'note': 5},
                   ],
                 },
-                // No published average: the app must derive 12.0 from the DS
-                // alone and mark it as a partial estimate.
+
                 {
                   'libelle': 'Analyse 1',
                   'regime': 'RM',
@@ -78,8 +84,7 @@ class FakeApiClient implements ApiClient {
           ],
         },
       ],
-      // Newest first. Note nothing is flagged `selected` — that mirrors the
-      // real page, which is why currentAu is the authoritative field.
+
       'annees': [
         {'code': '13', 'label': '2026-2027', 'selected': false},
         {'code': '12', 'label': '2025-2026', 'selected': false},
@@ -96,7 +101,6 @@ class FakeApiClient implements ApiClient {
 
   @override
   Future<Profile> getProfile() async {
-    // Mirrors the real /profile payload, keys and accents included.
     return Profile.fromJson({
       'prenom': 'Ahmed',
       'nom': 'Haddaji',
@@ -157,7 +161,7 @@ Widget wrap(FakeApiClient api) {
   return ProviderScope(
     overrides: [
       apiClientProvider.overrideWithValue(api),
-      // Skip the login flow: start already authenticated.
+
       authProvider.overrideWith(() => _AuthedNotifier()),
     ],
     child: MaterialApp(theme: buildAppTheme(), home: const HomeScreen()),
@@ -182,7 +186,6 @@ void main() {
     await tester.pumpWidget(wrap(FakeApiClient()));
     await tester.pump(const Duration(milliseconds: 300));
 
-    // AppBar title reflects the active tab.
     expect(find.text('Votre semaine'), findsOneWidget);
     expect(find.text('Relevés et moyennes'), findsNothing);
   });
@@ -201,7 +204,6 @@ void main() {
     await tester.pumpWidget(wrap(api));
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Switch to the Notes tab.
     await tester.tap(find.text('Notes').last);
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -217,7 +219,6 @@ void main() {
     await tester.tap(find.text('Notes').last);
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Backend resolved currentAu=12; must not fall back to the first option.
     expect(find.text('2025-2026'), findsOneWidget);
     expect(find.text('2026-2027'), findsNothing);
   });
@@ -231,7 +232,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     final callsBefore = api.gradesCallCount;
 
-    // Open the année dropdown and pick a different year.
     await tester.tap(find.text('2025-2026'));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('2024-2025').last);
@@ -239,7 +239,7 @@ void main() {
 
     expect(api.gradesCallCount, greaterThan(callsBefore), reason: 'should refetch');
     expect(api.lastAu, '11');
-    // ss must be pinned too — the upstream form ignores a lone f_au.
+
     expect(api.lastSs, isNotNull, reason: 'session must accompany the année');
     expect(api.lastSs, '1');
   });
@@ -272,8 +272,6 @@ void main() {
   });
 
   testWidgets('profile tab shows identity and every cursus year', (tester) async {
-    // Taller surface than the 800x600 default so the lazily-built ListView
-    // renders every year rather than only those initially on screen.
     tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -289,7 +287,6 @@ void main() {
     expect(find.text('09729031'), findsOneWidget);
     expect(find.text('Licence en Informatique et Multimédia (LSIM)'), findsOneWidget);
 
-    // One entry per academic year, newest first.
     expect(find.text('2026-2027'), findsOneWidget);
     expect(find.text('2025-2026'), findsOneWidget);
     expect(find.text('2023-2024'), findsOneWidget);
@@ -305,8 +302,6 @@ void main() {
     await tester.tap(find.text('Notes').last);
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Resolving the année from the response must not trigger a second round
-    // trip; the dropdown reads the value rather than re-selecting it.
     expect(api.gradesCallCount, 1);
   });
 
@@ -317,7 +312,6 @@ void main() {
     await tester.tap(find.text('Notes').last);
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Published matière average 6.5 -> danger colour, shown without a marker.
     final matiereAverage = tester.widget<Text>(find.text('6.50'));
     expect(matiereAverage.style?.color, AppColors.danger);
   });
@@ -334,12 +328,9 @@ void main() {
     await tester.tap(find.text('Notes').last);
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Analyse 1 has only its DS (12) posted, so the standing is 12.00 and the
-    // "~" prefix plus warning colour flag it as provisional.
     final estimate = tester.widget<Text>(find.text('~12.00'));
     expect(estimate.style?.color, AppColors.warning);
 
-    // The legend explaining the marker appears alongside it.
     expect(find.textContaining('non officielle'), findsOneWidget);
   });
 }

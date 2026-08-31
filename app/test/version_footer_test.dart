@@ -33,9 +33,7 @@ void main() {
         child: MaterialApp(home: Scaffold(body: VersionFooter())),
       ),
     );
-    // Before the first pump settles the FutureProvider, there is nothing to
-    // show — a skeleton or spinner would be an odd thing to draw attention
-    // to for a decorative footer.
+
     expect(find.byType(Text), findsNothing);
   });
 }

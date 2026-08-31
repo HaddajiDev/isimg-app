@@ -7,16 +7,6 @@ import '../models/profile.dart';
 import '../models/schedule.dart';
 import '../models/seance.dart';
 
-/// Turns ISIMG's HTML into the app's models.
-///
-/// Ported from the retired backend. The quirks encoded here were each found the
-/// hard way against the live site, so they are worth keeping intact:
-///
-///  * Denied or unknown routes answer 200 with the generic homepage rather than
-///    an error, so every parse checks it landed on the expected page.
-///  * The grades table repeats unit and subject cells with rowspan, so it must
-///    be expanded into a grid before reading.
-///  * "Abs." in a note cell is a scored zero, not a missing mark.
 class IsimgParser {
   const IsimgParser();
 
@@ -31,8 +21,6 @@ class IsimgParser {
   static String _squash(String text) => text.replaceAll(RegExp(r'\s+'), ' ').trim();
 
   static bool _isUnauthorized(String body) => body.contains("Vous n'êtes pas autorisé");
-
-  // ---- grades ----
 
   bool looksLikeGradesPage(String body) => body.contains('ISIMG - Relevés des Notes');
 
@@ -81,7 +69,6 @@ class IsimgParser {
         .toList();
   }
 
-  /// Expands a table with rowspan/colspan into a plain grid of cell text.
   List<List<String>> _tableToGrid(Element table) {
     final grid = <int, Map<int, String>>{};
 
@@ -100,7 +87,6 @@ class IsimgParser {
         final rowspan = int.tryParse(cell.attributes['rowspan'] ?? '1') ?? 1;
         final colspan = int.tryParse(cell.attributes['colspan'] ?? '1') ?? 1;
 
-        // <br> separates values that would otherwise run together.
         for (final br in cell.querySelectorAll('br')) {
           br.replaceWith(Text(' '));
         }
@@ -128,7 +114,6 @@ class IsimgParser {
   }
 
   List<Semestre> _parseGradeTree(Document doc) {
-    // The desktop table is the one carrying the coefficient columns.
     final table = doc.querySelector('#large table.mytable');
     if (table == null) return const [];
 
@@ -151,7 +136,6 @@ class IsimgParser {
       'moyUnite': col('Moy. Unité.'),
     };
 
-    // Ordered accumulation so semesters and units keep their printed order.
     final semesters = <String, Map<String, _UniteDraft>>{};
 
     for (final row in grid.skip(1)) {
@@ -196,8 +180,7 @@ class IsimgParser {
             libelle: epreuveLabel,
             poids: _firstNumber(weight?[1]),
             note: _firstNumber(noteCell),
-            // "Abs." is an absence the school scores as zero, quite different
-            // from a blank cell meaning "not marked yet".
+
             absent: RegExp(r'^abs', caseSensitive: false).hasMatch(noteCell),
           ),
         );
@@ -235,15 +218,12 @@ class IsimgParser {
         .toList();
   }
 
-  /// The value the site marks selected, else the first option.
   String? selectedCode(List<SelectOption> options) {
     for (final option in options) {
       if (option.selected) return option.code;
     }
     return null;
   }
-
-  // ---- cursus / profile ----
 
   bool looksLikeCursusPage(String body) => body.contains('<title>ISIMG - Cursus</title>');
 
@@ -300,13 +280,11 @@ class IsimgParser {
     );
   }
 
-  // ---- schedule ----
-
   bool looksLikeSchedulePage(String body) => body.contains('id="desktop-view"');
 
   Schedule parseSchedule(String body) {
     final doc = html_parser.parse(body);
-    // Month names carry accents, so \w+ would not match "août".
+
     final week = RegExp(r'(\d{2}\s*→\s*\d{2}\s+\p{L}+\s+\d{4})', unicode: true)
         .firstMatch(body);
 
@@ -317,25 +295,11 @@ class IsimgParser {
     );
   }
 
-  /// True when the site printed its "nothing scheduled" placeholder instead of
-  /// a grid.
-  ///
-  /// Scoped to the desktop view on purpose: the mobile view carries the same
-  /// wording in a permanently-hidden `#mobileEmpty` block that JavaScript
-  /// reveals for whichever day the student taps. Searching the whole body for
-  /// it therefore reports *every* week as free, however full it is.
   bool _declaresFreeWeek(Document doc) {
     final text = doc.querySelector('#desktop-view')?.text ?? '';
     return text.contains('Aucun cours') || text.contains('Aucune séance');
   }
 
-  /// Reads the week out of the desktop timetable.
-  ///
-  /// It is a flat CSS grid rather than a table, so there is no row or cell
-  /// nesting to walk: the children run corner cell, one sticky header per day,
-  /// then repeating groups of [slot label, one cell per day]. Day count comes
-  /// from the header block rather than being assumed to be six, and a cell may
-  /// hold more than one class.
   List<Seance> _parseScheduleGrid(Document doc) {
     final view = doc.querySelector('#desktop-view');
     if (view == null) return const [];
@@ -350,13 +314,12 @@ class IsimgParser {
     final headerCount = cells
         .takeWhile((e) => (e.attributes['class'] ?? '').contains('sticky'))
         .length;
-    // The corner cell above the slot column is sticky too, hence the -1.
+
     final dayColumns = headerCount - 1;
     if (dayColumns < 1) return const [];
 
     final sessions = <Seance>[];
-    // Reading up to `i + dayColumns`, so the last full row must end inside the
-    // list — truncated markup then yields fewer classes instead of throwing.
+
     for (var i = headerCount; i + dayColumns < cells.length; i += dayColumns + 1) {
       final slot = _normaliseSlot(cells[i].text);
       if (slot.isEmpty) continue;
@@ -371,9 +334,6 @@ class IsimgParser {
     return sessions;
   }
 
-  /// "08:15 → 09:45" as the site writes it, into the "08:15-09:45" shape the
-  /// app orders and matches slots by. Built from the times themselves so the
-  /// separator — arrow, dash or otherwise — does not matter.
   static String _normaliseSlot(String raw) {
     final times = RegExp(r'\d{1,2}[:h]\d{2}')
         .allMatches(raw)
@@ -387,15 +347,11 @@ class IsimgParser {
     final matiere = _squash(card.querySelector('p')?.text ?? '');
     if (matiere.isEmpty) return null;
 
-    // Cours / TD / TP sits in the card's only bold span; the colour classes
-    // encode the same thing but the word is what the school actually prints.
     final badge = card
         .querySelectorAll('span')
         .where((s) => (s.attributes['class'] ?? '').contains('font-bold'))
         .firstOrNull;
 
-    // Room and teacher are both plain truncating spans, told apart only by the
-    // icon each carries rather than by their order.
     String? labelled(String icon) {
       for (final span in card.querySelectorAll('span')) {
         if (span.querySelector('i.$icon') == null) continue;
@@ -412,21 +368,13 @@ class IsimgParser {
       matiere: matiere,
       salle: labelled('fa-location-dot'),
       enseignant: labelled('fa-user'),
-      // A make-up class lands outside the usual timetable, so it is worth
-      // carrying through to the grid rather than reading as a normal session.
+
       rattrapage: card.text.contains('RATTRAPAGE'),
     );
   }
 
   bool isUnauthorized(String body) => _isUnauthorized(body);
 
-  // ---- login ----
-
-  /// True for the public homepage carrying the login form (password field and
-  /// the Google sign-in widget). A check_account POST that is not going to
-  /// verify_2fa can still meta-refresh back to this exact page — that happens
-  /// on wrong credentials, not just on a successful trusted-device skip of the
-  /// code — so this is what tells the two apart.
   bool looksLikeLoginPage(String body) =>
       body.contains('id="loginform"') || body.contains('id="g_id_onload"');
 }

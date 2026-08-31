@@ -34,7 +34,6 @@ void main() {
     });
 
     test('computes DS/Ex weighting when the average is missing', () {
-      // Real row: Algèbre 1, DS 10 (0.3) + Ex 5 (0.7) -> 6.5
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -48,7 +47,6 @@ void main() {
     });
 
     test('computes DS/TP/Ex weighting', () {
-      // Real row: Système d'exploitation 1, 15.5/18/17 -> 16.92
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -63,7 +61,6 @@ void main() {
     });
 
     test('renormalises over graded épreuves only, and flags it partial', () {
-      // Only the DS is in: standing so far is the DS itself, not 0.3 x note.
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -91,9 +88,6 @@ void main() {
     });
 
     test('scores an absence as zero rather than treating it as pending', () {
-      // Real 2025-2026 row: DS 0.5 (0.15), TP Abs. (0.15), Ex Abs. (0.7).
-      // The school published 0.08, i.e. 0.5*0.15 with the absences as zeros.
-      // Renormalising them away would have reported 0.50 instead.
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -104,12 +98,11 @@ void main() {
         ),
       );
       expect(result.value, closeTo(0.075, 0.001));
-      // Every épreuve is accounted for, so this is a complete computation.
+
       expect(result.source, AverageSource.computed);
     });
 
     test('separates an absence from a mark that has not been entered', () {
-      // Only the DS is graded and nothing is marked absent -> partial standing.
       final pending = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -123,7 +116,6 @@ void main() {
     });
 
     test('refuses to guess once a rattrapage épreuve appears', () {
-      // Weights would sum past 1 and the school's merge rule is unknown.
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -139,7 +131,6 @@ void main() {
 
   group('unité', () {
     test('weights matières by their coefficient', () {
-      // Real unit: Uef110, Algèbre 6.5 (cf 1.5) + Analyse 5.35 (cf 1.5) -> 5.93
       final unite = Unite(
         libelle: 'Uef110',
         coefficient: 3,
@@ -168,7 +159,7 @@ void main() {
         libelle: 'U',
         matieres: [
           matiere(moyenne: 12, coefficient: 2),
-          matiere(coefficient: 3), // nothing graded yet
+          matiere(coefficient: 3),
         ],
       );
       expect(calc.uniteAverage(unite).value, closeTo(12, 0.001));
@@ -191,8 +182,6 @@ void main() {
   });
 
   group('semestre and année', () {
-    // Unit averages and coefficients exactly as published in the 2024-2025
-    // bulletin, whose moyenne générale is 10.56.
     final s1 = Semestre(
       label: '1',
       unites: [
@@ -221,7 +210,6 @@ void main() {
     });
 
     test('annual average reproduces the published moyenne générale', () {
-      // (10.1517 + 10.9593) / 2 -> 10.5555, printed as 10.56.
       expect(calc.annualAverage([s1, s2]).value, closeTo(10.56, 0.01));
     });
 
@@ -231,10 +219,6 @@ void main() {
     });
 
     test('end-to-end: recomputes a whole bulletin from raw notes alone', () {
-      // Uef110 with both matières fully graded and no average published:
-      // Algèbre  DS 10 (0.3) + Ex 5   (0.7) -> 6.50
-      // Analyse  DS 5  (0.3) + Ex 5.5 (0.7) -> 5.35
-      // unité = (6.50 + 5.35) / 2 (equal coefficients) -> 5.925
       final unite = Unite(
         libelle: 'Uef110',
         coefficient: 3,
@@ -260,7 +244,7 @@ void main() {
 
       final result = calc.uniteAverage(unite);
       expect(result.value, closeTo(5.925, 0.001));
-      // Derived rather than published, so it must not look authoritative.
+
       expect(result.source, AverageSource.computed);
       expect(result.isEstimate, isTrue);
     });

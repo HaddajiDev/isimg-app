@@ -1,6 +1,5 @@
 import 'grade_tree.dart';
 
-/// One entry of the site's année / session <select> controls.
 class SelectOption {
   final String code;
   final String label;
@@ -31,8 +30,6 @@ class Grades {
   final List<SelectOption> annees;
   final List<SelectOption> sessions;
 
-  /// Codes the returned data actually corresponds to, as reported by the
-  /// backend. Authoritative — the upstream markup can't be trusted to mark it.
   final String? currentAu;
   final String? currentSs;
 
@@ -76,7 +73,6 @@ class Grades {
         .toList();
   }
 
-  /// Round-trips through the offline cache.
   Map<String, dynamic> toJson() => {
         'nom': nom,
         'cin': cin,

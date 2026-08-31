@@ -1,15 +1,11 @@
 import 'api_client.dart';
 import 'demo_data.dart';
+import '../models/absences.dart';
+import '../models/exam.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
 
-/// Wraps the real [ApiClient] and diverts a fixed demo login to fabricated
-/// data instead of the network. Exists so Play Store reviewers — who cannot
-/// receive the emailed 2FA code sent to a real student's inbox — have a
-/// working account to review the app with.
-///
-/// Every other username and password is passed straight through to ISIMG.
 class DemoAwareApiClient implements ApiClient {
   final ApiClient _delegate;
   bool _demoSession = false;
@@ -53,5 +49,17 @@ class DemoAwareApiClient implements ApiClient {
   Future<Profile> getProfile() {
     if (_demoSession) return Future.value(demoProfile());
     return _delegate.getProfile();
+  }
+
+  @override
+  Future<Absences> getAbsences() {
+    if (_demoSession) return Future.value(demoAbsences());
+    return _delegate.getAbsences();
+  }
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() {
+    if (_demoSession) return Future.value(demoExams());
+    return _delegate.getUpcomingExams();
   }
 }

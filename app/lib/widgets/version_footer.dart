@@ -4,11 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_info_provider.dart';
 import '../theme/app_theme.dart';
 
-/// A quiet version line pinned under the tab content, present on every
-/// screen since it lives in the shell rather than each individual page.
-/// Purely informational, so it renders nothing while unresolved rather than
-/// a skeleton or error state — there is nothing worth interrupting anyone
-/// for here.
 class VersionFooter extends ConsumerWidget {
   const VersionFooter({super.key});
 

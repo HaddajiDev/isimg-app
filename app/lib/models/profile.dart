@@ -1,4 +1,3 @@
-/// One academic year from the "Mon cursus" table.
 class CursusYear {
   final String? annee;
   final String? niveau;
@@ -24,7 +23,6 @@ class CursusYear {
     this.resultat,
   });
 
-  /// Keys mirror the upstream table headers verbatim, accents included.
   factory CursusYear.fromJson(Map<String, dynamic> json) {
     String? read(String key) {
       final value = json[key] as String?;
@@ -45,8 +43,6 @@ class CursusYear {
     );
   }
 
-  /// Round-trips through the offline cache, using the same upstream-header
-  /// keys [fromJson] reads back.
   Map<String, dynamic> toJson() => {
         'AU': annee,
         'Niveau': niveau,
@@ -60,8 +56,6 @@ class CursusYear {
         'Résultat': resultat,
       };
 
-  /// Leading numeric part of the moyenne — the site can append a note such as
-  /// "0 (S1)" for a year still in progress.
   double? get moyenneValue {
     final match = RegExp(r'^-?\d+(?:[.,]\d+)?').firstMatch(moyenne ?? '');
     return match == null ? null : double.tryParse(match[0]!.replaceAll(',', '.'));
@@ -91,7 +85,6 @@ class Profile {
 
   String get fullName => [prenom, nom].whereType<String>().join(' ');
 
-  /// Initials for the avatar, e.g. "AH".
   String get initials {
     final parts = [prenom, nom].whereType<String>().where((p) => p.isNotEmpty);
     return parts.map((p) => p[0].toUpperCase()).take(2).join();

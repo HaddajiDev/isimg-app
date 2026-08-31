@@ -11,9 +11,6 @@ void main() {
   });
 
   test('sends nothing but the seed', () {
-    // animationVariant/tags were dropped: flutter_svg cannot animate, and some
-    // encodings of them made the API answer 400, which the old network loader
-    // then fed to the SVG parser as if it were an image.
     final uri = StudentAvatar.avatarUri('Ahmed Haddaji');
 
     expect(uri.queryParameters.keys, ['seed']);
@@ -28,7 +25,6 @@ void main() {
   });
 
   test('name word order does not change the avatar', () {
-    // The cursus page says "Ahmed Haddaji"; the relevé says "Haddaji Ahmed".
     expect(
       StudentAvatar.avatarUri('Ahmed Haddaji').toString(),
       StudentAvatar.avatarUri('Haddaji Ahmed').toString(),
@@ -51,7 +47,6 @@ void main() {
   });
 
   test('canonicalises the seed for a three-part name', () {
-    // The account this first failed on.
     expect(StudentAvatar.canonicalSeed('Imed eddine Amara'), 'amara eddine imed');
   });
 }

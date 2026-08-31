@@ -2,8 +2,9 @@ export const metadata = {
   title: "Politique de confidentialité — ISIMG Étudiant",
 };
 
-const LAST_UPDATED = "8 août 2026";
+const LAST_UPDATED = "31 août 2026";
 const CONTACT_EMAIL = "ahmedhaddajiahmed@gmail.com";
+const GITHUB_URL = "https://github.com/HaddajiDev/isimg-app";
 
 function Section({
   title,
@@ -49,6 +50,25 @@ export default function Home() {
           Ministère de l&rsquo;Enseignement Supérieur, et n&rsquo;est ni
           développée ni approuvée par ces derniers.
         </p>
+
+        <Section title="Code source ouvert (open source)">
+          <p>
+            Cette application est <strong>open source</strong> : son code
+            source est public et peut être consulté, vérifié et audité par
+            n&rsquo;importe qui. Vous n&rsquo;avez pas à nous croire sur parole
+            — vous pouvez vérifier vous-même, dans le code, la manière dont vos
+            données sont traitées. Le code est disponible sur{" "}
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-zinc-950 underline dark:text-zinc-50"
+            >
+              GitHub
+            </a>
+            .
+          </p>
+        </Section>
 
         <Section title="Aucun serveur, aucune base de données">
           <p>

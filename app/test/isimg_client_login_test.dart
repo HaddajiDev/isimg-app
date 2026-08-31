@@ -13,9 +13,6 @@ import 'package:isimg_app/isimg/isimg_client.dart';
 
 String fixture(String name) => File('test/fixtures/$name').readAsStringSync();
 
-/// Answers requests in strict sequence, so the same URL requested twice gets
-/// whichever body is next in the script rather than always matching the
-/// first entry that contains the URL.
 class ScriptedAdapter implements HttpClientAdapter {
   final List<(String urlContains, String body)> responses;
   var _cursor = 0;
@@ -61,8 +58,6 @@ void main() {
 
   test('wrong credentials are rejected when check_account re-renders the login page',
       () async {
-    // The real captured login page, exactly as check_account would re-serve
-    // it for a rejected attempt: no extra fetch needed to notice this.
     final loginPage = fixture('login_page.html');
     final client = clientWith([
       ('/fra/home', _homeWithToken),
@@ -77,8 +72,6 @@ void main() {
 
   test('wrong credentials are rejected even if that response also carries a redirect',
       () async {
-    // A meta-refresh alone was the original bug's blind spot: this is still
-    // the login page, so it must not be trusted just because it redirects.
     final loginPage = fixture('login_page.html').replaceFirst(
       '</head>',
       '<meta http-equiv="refresh" content="0;URL=/fra/home" /></head>',
@@ -96,9 +89,6 @@ void main() {
 
   test('a real login succeeds without any extra fetch of the redirect target',
       () async {
-    // The regression this guards against: the previous fix re-fetched the
-    // redirect target and broke on this exact path. The script only has two
-    // entries, so a third request would fail the test outright.
     final client = clientWith([
       ('/fra/home', _homeWithToken),
       ('check_account', '<meta http-equiv="refresh" content="0;URL=/fra/dashboard" />'),
@@ -111,9 +101,6 @@ void main() {
 
   test('an expired password is reported as such, not as a successful login',
       () async {
-    // The real redirect a correct-but-expired password gets: the site's own
-    // reset form. It is not the login page and not verify_2fa, so it used to
-    // fall through to "logged in" and store a session that could read nothing.
     final client = clientWith([
       ('/fra/home', _homeWithToken),
       (
@@ -135,15 +122,11 @@ void main() {
     ]);
 
     await expectLater(client.login('2024666', 'pw'), throwsA(isA<ApiException>()));
-    // A stored session would make the app believe it is signed in and blame
-    // every failed page on a lapsed login.
+
     expect(await SessionStore().read(), isNull);
   });
 
   test('an expired password never reaches the emailed-code step', () async {
-    // The site stops at its reset form: no verify_2fa redirect, so no code is
-    // ever sent. The script has only two entries, so any attempt to fetch a
-    // 2FA page would fail this test outright.
     final client = clientWith([
       ('/fra/home', _homeWithToken),
       ('check_account', '<meta http-equiv="refresh" content="0;URL=/fra/intranet/changepwd" />'),

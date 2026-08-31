@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/grades_cache.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -18,10 +20,13 @@ import 'package:isimg_app/screens/grades_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/student_avatar.dart';
 
-/// Never resolves — stands in for a slow network so the screen is stuck on
-/// [gradesProvider]'s loading state for the whole test, which is exactly the
-/// window the cache-peek placeholder is meant to fill.
 class _StuckApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   @override
   Future<Grades> getGrades({String? au, String? ss}) => Completer<Grades>().future;
 
@@ -82,13 +87,11 @@ void main() {
           ),
         ),
       );
-      // Long enough for the cache read (local, fast) to resolve, but the
-      // network call never will — proving this isn't just an early frame.
+
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Étudiant Cache'), findsOneWidget);
-      // The thin top progress bar, not the full-page skeleton, marks this as
-      // "seeded from cache, still refreshing" rather than "fully loaded".
+
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
     },
   );

@@ -47,8 +47,6 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-/// Shown while [profileProvider] is still loading: the last cached profile,
-/// if there is one, instead of a bare skeleton.
 class _ProfileLoadingPlaceholder extends ConsumerWidget {
   const _ProfileLoadingPlaceholder();
 
@@ -80,8 +78,6 @@ class _ProfileLoadingPlaceholder extends ConsumerWidget {
   }
 }
 
-/// The profile itself, shared between a fresh load and a cached seed so both
-/// render identically.
 class _ProfileContent extends StatelessWidget {
   final Profile profile;
 
@@ -237,7 +233,6 @@ class _InfoField extends StatelessWidget {
   }
 }
 
-/// A year in the parcours, drawn as a timeline entry with a status dot.
 class _YearTile extends StatelessWidget {
   final CursusYear year;
   final bool isFirst;
@@ -269,13 +264,11 @@ class _YearTile extends StatelessWidget {
     final mono = theme.extension<AppTypography>()!.monoFamily;
     final color = _statusColor;
 
-    // IntrinsicHeight gives the row a definite height inside the scroll view,
-    // without which the rail's Expanded connector lines cannot be laid out.
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Timeline rail: dot plus connecting lines.
+
           SizedBox(
             width: 28,
             child: Column(
@@ -363,7 +356,7 @@ class _YearTile extends StatelessWidget {
                           label: 'Moyenne',
                           value: year.moyenne ?? '—',
                           monoFamily: mono,
-                          // Only tint once a real average exists.
+
                           color: year.isInProgress
                               ? AppColors.textSecondary
                               : ((year.moyenneValue ?? 0) >= 10

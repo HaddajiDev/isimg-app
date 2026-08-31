@@ -23,7 +23,7 @@ void main() {
       sessions: const [
         Seance(weekday: 1, slot: '08:15-09:45', type: SeanceType.cours, matiere: 'Algèbre 1'),
       ],
-      // Monday 21 October 2024, matching the timetable this was modelled on.
+
       weekStart: DateTime(2024, 10, 21),
     )));
 
@@ -74,7 +74,6 @@ void main() {
       weekStart: DateTime(2024, 10, 21),
     )));
 
-    // Neither may quietly win: a double booking is the timetable's own doing.
     expect(find.text('Premier'), findsOneWidget);
     expect(find.text('Second'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -132,15 +131,13 @@ void main() {
     final today = DateTime.now().weekday;
 
     await tester.pumpWidget(wrap(ScheduleGrid(
-      // A slot spanning the whole day always contains "now", regardless of
-      // when the test happens to run.
       sessions: [
         Seance(weekday: today, slot: '00:00-23:59', type: SeanceType.cours, matiere: 'Maintenant'),
       ],
       weekStart: weekStart,
     )));
 
-    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     final todayLabel = tester.widget<Text>(find.text(names[today - 1]));
     expect(todayLabel.style?.color, AppColors.purple);
 
@@ -155,7 +152,6 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    // Ten weeks away is never "now", whichever weekday this runs on.
     final weekStart = mondayOf(DateTime.now()).add(const Duration(days: 70));
     final today = DateTime.now().weekday;
 
@@ -166,7 +162,7 @@ void main() {
       weekStart: weekStart,
     )));
 
-    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     final dayLabel = tester.widget<Text>(find.text(names[today - 1]));
     expect(dayLabel.style?.color, AppColors.textPrimary);
 
@@ -179,7 +175,7 @@ void main() {
 
     expect(schedule.hasSessions, isTrue);
     expect(schedule.sessions, hasLength(22));
-    // Monday through Saturday all have at least one class.
+
     for (var day = 1; day <= 6; day++) {
       expect(
         schedule.sessions.where((s) => s.weekday == day),
@@ -187,7 +183,7 @@ void main() {
         reason: 'weekday $day should have classes',
       );
     }
-    // All three kinds are present, so the grid's colour coding is exercised.
+
     for (final type in [SeanceType.cours, SeanceType.td, SeanceType.tp]) {
       expect(schedule.sessions.where((s) => s.type == type), isNotEmpty);
     }

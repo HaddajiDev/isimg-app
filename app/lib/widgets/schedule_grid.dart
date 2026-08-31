@@ -6,9 +6,6 @@ import '../theme/app_theme.dart';
 bool _isSameDate(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-/// Parses "08:15-09:45" into minutes-since-midnight bounds. Returns null for
-/// anything that doesn't look like that shape, so a malformed slot just never
-/// matches rather than crashing the grid.
 (int, int)? _parseSlotRange(String slot) {
   final match =
       RegExp(r'^(\d{1,2})[:h](\d{2})\s*-\s*(\d{1,2})[:h](\d{2})').firstMatch(slot.trim());
@@ -19,18 +16,9 @@ bool _isSameDate(DateTime a, DateTime b) =>
   );
 }
 
-/// Timetable laid out the way the school prints it: one column per day, one row
-/// per time slot, each class a coloured block.
-///
-/// The grid is wider than a phone, so it scrolls sideways with the slot column
-/// pinned — a phone-shaped rewrite would lose the week-at-a-glance reading that
-/// makes this layout worth keeping. Today's column and the current time's row
-/// are both tinted, like a spreadsheet crosshair, so "where am I right now" is
-/// a glance rather than a lookup.
 class ScheduleGrid extends StatelessWidget {
   final List<Seance> sessions;
 
-  /// Monday of the displayed week, used for the dates in the header.
   final DateTime weekStart;
 
   const ScheduleGrid({super.key, required this.sessions, required this.weekStart});
@@ -40,8 +28,6 @@ class ScheduleGrid extends StatelessWidget {
   static const _rowHeight = 96.0;
   static const _headerHeight = 52.0;
 
-  /// Slots in the order they occur, taken from the data rather than a fixed
-  /// list so an unusual timetable still renders every class it contains.
   List<String> get _slots {
     final seen = <String, int>{};
     for (final seance in sessions) {
@@ -52,7 +38,6 @@ class ScheduleGrid extends StatelessWidget {
     return slots;
   }
 
-  /// Monday through Saturday, extended if the timetable somehow runs later.
   List<int> get _weekdays {
     final latest = sessions.fold(6, (max, s) => s.weekday > max ? s.weekday : max);
     return [for (var day = 1; day <= latest; day++) day];
@@ -63,8 +48,6 @@ class ScheduleGrid extends StatelessWidget {
           if (seance.weekday == weekday && seance.slot == slot) seance,
       ];
 
-  /// How many classes the busiest cell of a slot holds. A row with a doubled-up
-  /// cell grows for every slot column so the pinned times stay level with it.
   int _stackDepth(String slot) {
     final perDay = <int, int>{};
     for (final seance in sessions) {
@@ -75,9 +58,6 @@ class ScheduleGrid extends StatelessWidget {
     return perDay.values.fold(1, (deepest, n) => n > deepest ? n : deepest);
   }
 
-  /// The weekday column that is today, or null when the displayed week isn't
-  /// the current one — highlighting "now" on a week that isn't this week
-  /// would just be misleading.
   int? _todayWeekday(List<int> weekdays) {
     final now = DateTime.now();
     for (final weekday in weekdays) {
@@ -86,9 +66,6 @@ class ScheduleGrid extends StatelessWidget {
     return null;
   }
 
-  /// The slot the current time falls in, only meaningful alongside
-  /// [_todayWeekday] — same reasoning: a time-of-day match means nothing on a
-  /// week that isn't the current one.
   String? _currentSlot(List<String> slots, int? todayWeekday) {
     if (todayWeekday == null) return null;
     final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
@@ -109,8 +86,6 @@ class ScheduleGrid extends StatelessWidget {
       for (final slot in slots) slot: _rowHeight * _stackDepth(slot),
     };
 
-    // The slot column sits outside the horizontal scroll view so the times stay
-    // readable however far right the week is scrolled; only the day columns move.
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: DecoratedBox(
@@ -172,7 +147,6 @@ class ScheduleGrid extends StatelessWidget {
   }
 }
 
-/// The "Séance" label above the pinned slot column.
 class _SlotHeaderCell extends StatelessWidget {
   const _SlotHeaderCell();
 
@@ -268,7 +242,6 @@ class _SlotCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Split so the two times stack instead of overflowing the narrow column.
     final parts = slot.split('-');
 
     return Container(
@@ -314,8 +287,6 @@ class _GridCell extends StatelessWidget {
     required this.height,
   });
 
-  /// Colour per kind of class, so a week can be read at a glance. The school's
-  /// own palette is not reused: it is light-theme pastel and unreadable here.
   static Color _tint(SeanceType type) => switch (type) {
         SeanceType.cours => AppColors.purple,
         SeanceType.td => AppColors.green,
@@ -325,9 +296,6 @@ class _GridCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Crosshair effect: a faint wash along today's column and the current
-    // row, with their intersection — the actual "happening now" cell —
-    // reading strongest since both apply there.
     final washAlpha = (isToday ? 0.05 : 0.0) + (isCurrentSlot ? 0.05 : 0.0);
 
     return Container(
@@ -340,8 +308,7 @@ class _GridCell extends StatelessWidget {
           top: BorderSide(color: AppColors.border),
         ),
       ),
-      // Two classes booked into one slot is the school's doing, not a parse
-      // error, so both are shown rather than one quietly winning.
+
       child: seances.isEmpty
           ? null
           : Column(
@@ -393,8 +360,7 @@ class _SeanceBlock extends StatelessWidget {
                   ),
                 if (seance.rattrapage) ...[
                   if (prefix.isNotEmpty) const SizedBox(width: 4),
-                  // Worth its own marker: a make-up class sits at a time the
-                  // student has no habit of showing up for.
+
                   Flexible(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
@@ -403,8 +369,6 @@ class _SeanceBlock extends StatelessWidget {
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: Text(
-                        // The site's own word, not an abbreviation: it is the
-                        // one label a student must not have to decode.
                         'RATTRAPAGE',
                         maxLines: 1,
                         overflow: TextOverflow.clip,

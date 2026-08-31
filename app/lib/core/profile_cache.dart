@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/profile.dart';
 
-/// A profile served from the cache, with when it was captured.
 class CachedProfile {
   final Profile profile;
   final DateTime capturedAt;
@@ -12,8 +11,6 @@ class CachedProfile {
   const CachedProfile({required this.profile, required this.capturedAt});
 }
 
-/// Keeps the last fetched profile on the device — there is only ever one, so
-/// unlike [GradesCache] or the schedule cache this needs no key.
 class ProfileCache {
   static const _key = 'profile_v1';
 
@@ -28,7 +25,6 @@ class ProfileCache {
         }),
       );
     } catch (_) {
-      // Caching is an optimisation; a failure here must not break the fetch.
     }
   }
 
@@ -45,7 +41,6 @@ class ProfileCache {
 
       return CachedProfile(profile: Profile.fromJson(profile), capturedAt: capturedAt);
     } catch (_) {
-      // A corrupt entry behaves as a miss rather than breaking the screen.
       return null;
     }
   }
@@ -55,7 +50,6 @@ class ProfileCache {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
     } catch (_) {
-      // Nothing to do; the entry was already unreadable.
     }
   }
 }

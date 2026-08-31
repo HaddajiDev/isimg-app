@@ -61,10 +61,6 @@ class ScheduleScreen extends ConsumerWidget {
   }
 }
 
-/// Shown while [scheduleProvider] is still loading: the last cached week for
-/// whichever week is selected, if there is one, instead of a bare skeleton —
-/// switching weeks or reopening the app should not feel like starting cold
-/// every time.
 class _ScheduleLoadingPlaceholder extends ConsumerWidget {
   const _ScheduleLoadingPlaceholder();
 
@@ -97,8 +93,6 @@ class _ScheduleLoadingPlaceholder extends ConsumerWidget {
   }
 }
 
-/// The actual week view, shared between a fresh load and a cached seed so
-/// both render identically.
 class _ScheduleContent extends StatelessWidget {
   final Schedule schedule;
   final DateTime weekStart;
@@ -108,9 +102,6 @@ class _ScheduleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!schedule.hasSessions) {
-      // A RefreshIndicator only detects the pull gesture over a Scrollable,
-      // so the empty state needs one too even though it never needs to
-      // actually scroll.
       return LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -131,9 +122,6 @@ class _ScheduleContent extends StatelessWidget {
       return ScheduleGrid(sessions: schedule.sessions, weekStart: weekStart);
     }
 
-    // The site did not call this week free, yet nothing could be read out of
-    // its grid — so the markup has changed shape. Saying so beats showing an
-    // empty week the student would take at face value.
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -152,7 +140,6 @@ class _ScheduleContent extends StatelessWidget {
   }
 }
 
-/// Tells the student they are looking at a saved copy, and how old it is.
 class _OfflineBanner extends StatelessWidget {
   final DateTime capturedAt;
 
@@ -274,11 +261,11 @@ class _WeekNavigator extends ConsumerWidget {
     final picked = await showDatePicker(
       context: context,
       initialDate: current,
-      // Wide enough to cover any année the student can select elsewhere.
+
       firstDate: DateTime(now.year - 6),
       lastDate: DateTime(now.year + 2, 12, 31),
       helpText: 'Choisir une semaine',
-      // Any day in the week is fine; it snaps to the Monday.
+
       fieldHintText: 'jj/mm/aaaa',
     );
     if (picked == null) return;
@@ -299,7 +286,7 @@ class _NavButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon, size: 20),
       tooltip: tooltip,
-      // Icon-only control: the tooltip doubles as its accessibility label.
+
       style: IconButton.styleFrom(
         backgroundColor: AppColors.surfaceRaised,
         foregroundColor: AppColors.textPrimary,

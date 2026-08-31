@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import 'absences_screen.dart';
+import 'exams_screen.dart';
 import 'grades_screen.dart';
 import 'profile_screen.dart';
 import 'schedule_screen.dart';
@@ -14,12 +16,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  /// Emploi is the landing tab — it's what students check most often.
   int _index = 0;
 
   static const _tabs = [
     (title: 'Emploi', subtitle: 'Votre semaine', screen: ScheduleScreen()),
     (title: 'Notes', subtitle: 'Relevés et moyennes', screen: GradesScreen()),
+    (title: 'Examens', subtitle: 'Prochaines épreuves', screen: ExamsScreen()),
+    (title: 'Absences', subtitle: 'Assiduité et bilan', screen: AbsencesScreen()),
     (
       title: 'Profil',
       subtitle: 'Identité et parcours',
@@ -76,6 +79,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart_rounded),
             label: 'Notes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.event_note_outlined),
+            selectedIcon: Icon(Icons.event_note_rounded),
+            label: 'Examens',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.fact_check_outlined),
+            selectedIcon: Icon(Icons.fact_check_rounded),
+            label: 'Absences',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),

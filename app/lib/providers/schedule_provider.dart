@@ -24,11 +24,9 @@ final selectedWeekProvider = StateProvider<DateTime>((ref) => mondayOf(DateTime.
 
 final scheduleCacheProvider = Provider<ScheduleCache>((ref) => ScheduleCache());
 
-/// A week plus where it came from.
 class ScheduleView {
   final Schedule schedule;
 
-  /// When the cached copy was captured, or null if this is live.
   final DateTime? capturedAt;
 
   const ScheduleView({required this.schedule, this.capturedAt});
@@ -46,10 +44,6 @@ final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
     throw ApiException('no_session', statusCode: 401);
   }
   if (!auth.isAuthenticated) {
-    // A remembered login is being silently replayed — there is no session to
-    // fetch with yet. Show the cache if there is one; this rebuilds the
-    // moment auth settles either way, so there is nothing else to do here
-    // but wait rather than surface a spurious error.
     final cached = await cache.read(week);
     if (cached != null) {
       return ScheduleView(schedule: cached.schedule, capturedAt: cached.capturedAt);
@@ -62,8 +56,6 @@ final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
     await cache.save(week, schedule);
     return ScheduleView(schedule: schedule);
   } on ApiException catch (error) {
-    // Only stand in for a missing connection. A lapsed session must still
-    // surface so the app can renew it rather than showing stale data forever.
     if (!error.isConnectivityProblem) rethrow;
 
     final cached = await cache.read(week);
@@ -73,9 +65,6 @@ final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
   }
 });
 
-/// Reads the cache without touching the network — used to seed the screen
-/// instantly while [scheduleProvider] is still loading, instead of a
-/// skeleton.
 final scheduleCachePeekProvider = FutureProvider.autoDispose<CachedSchedule?>((ref) {
   final cache = ref.watch(scheduleCacheProvider);
   return cache.read(formatWeek(ref.watch(selectedWeekProvider)));
@@ -93,7 +82,6 @@ void goToCurrentWeek(WidgetRef ref) {
   ref.read(selectedWeekProvider.notifier).state = mondayOf(DateTime.now());
 }
 
-/// Jumps to whichever week contains [date].
 void goToWeekOf(WidgetRef ref, DateTime date) {
   ref.read(selectedWeekProvider.notifier).state = mondayOf(date);
 }

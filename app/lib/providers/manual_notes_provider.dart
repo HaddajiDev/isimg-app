@@ -7,9 +7,6 @@ import '../models/manual_note.dart';
 
 const _storageKey = 'manual_notes_v1';
 
-/// Student-entered notes, persisted on the device only. They are projections,
-/// never sent anywhere, and are dropped the moment the school publishes a real
-/// note for the same slot.
 class ManualNotesNotifier extends AsyncNotifier<ManualNotes> {
   @override
   Future<ManualNotes> build() => _load();
@@ -26,7 +23,6 @@ class ManualNotesNotifier extends AsyncNotifier<ManualNotes> {
           if (entry.value is num) entry.key: (entry.value as num).toDouble(),
       });
     } catch (_) {
-      // Corrupt or unreadable storage must not block the grades screen.
       return ManualNotes.empty;
     }
   }
@@ -41,7 +37,6 @@ class ManualNotesNotifier extends AsyncNotifier<ManualNotes> {
         await prefs.setString(_storageKey, jsonEncode(notes.asMap));
       }
     } catch (_) {
-      // Keep the in-memory value; it will simply not survive a restart.
     }
   }
 

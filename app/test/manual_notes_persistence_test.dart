@@ -18,7 +18,6 @@ ManualNoteKey key(String matiere, int index) => ManualNoteKey(
       epreuveIndex: index,
     );
 
-/// Reads what actually landed in device storage.
 Future<Map<String, dynamic>> storedJson() async {
   final prefs = await SharedPreferences.getInstance();
   final raw = prefs.getString(_storageKey);
@@ -26,7 +25,6 @@ Future<Map<String, dynamic>> storedJson() async {
 }
 
 Future<ManualNotes> loadFresh() async {
-  // A new container stands in for a cold app start.
   final container = ProviderContainer();
   addTearDown(container.dispose);
   return container.read(manualNotesProvider.future);
@@ -52,7 +50,6 @@ void main() {
     await first.read(manualNotesProvider.notifier).setNote(key('Qualité', 1), 14.5);
     await first.read(manualNotesProvider.notifier).setNote(key('Anglais 3', 0), 8);
 
-    // Cold start: nothing carried over in memory, only what was persisted.
     final restored = await loadFresh();
     expect(restored.length, 2);
     expect(restored.noteFor(key('Qualité', 1)), 14.5);

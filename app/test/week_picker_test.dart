@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
 import 'package:isimg_app/models/schedule.dart';
@@ -15,6 +17,12 @@ import 'package:isimg_app/screens/schedule_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 
 class RecordingApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   final requestedWeeks = <String?>[];
 
   @override
@@ -54,7 +62,7 @@ Widget wrap(RecordingApi api) {
     ],
     child: MaterialApp(
       theme: buildAppTheme(),
-      // Same localisation as the real app, so the picker's buttons are French.
+
       locale: const Locale('fr'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -86,7 +94,6 @@ void main() {
 
     expect(find.text('Semaine en cours'), findsOneWidget);
 
-    // Moving away swaps the hint to the way back.
     await tester.tap(find.byTooltip('Semaine suivante'));
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -104,14 +111,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Choisir une semaine'), findsWidgets);
 
-    // Pick a day, then confirm.
-    final target = DateTime.now().add(const Duration(days: 2));
+    final displayedMonth = mondayOf(DateTime.now());
+    final target = DateTime(displayedMonth.year, displayedMonth.month, 15);
     await tester.tap(find.text('${target.day}').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    // Whatever day was chosen, the request is for that week's Monday.
     final requested = api.requestedWeeks.last;
     expect(requested, formatWeek(mondayOf(target)));
   });

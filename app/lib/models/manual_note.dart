@@ -1,9 +1,5 @@
 import '../models/grade_tree.dart';
 
-/// Identifies one épreuve slot a student may fill in themselves.
-///
-/// The position within the matière is part of the key because labels repeat —
-/// CC subjects routinely carry two "DS (0.4)" épreuves.
 class ManualNoteKey {
   final String annee;
   final String session;
@@ -21,8 +17,6 @@ class ManualNoteKey {
     required this.epreuveIndex,
   });
 
-  /// Stable string form used as the persistence key. `§` cannot appear in the
-  /// upstream labels, so it is safe as a separator.
   String get storageKey =>
       [annee, session, semestre, unite, matiere, '$epreuveIndex'].join('§');
 
@@ -52,7 +46,6 @@ class ManualNoteKey {
   String toString() => storageKey;
 }
 
-/// Notes a student typed in, keyed by [ManualNoteKey.storageKey].
 class ManualNotes {
   final Map<String, double> _byKey;
 
@@ -75,7 +68,6 @@ class ManualNotes {
     return ManualNotes(next);
   }
 
-  /// Drops every note belonging to one année/session pair.
   ManualNotes clearFor({required String annee, required String session}) {
     final prefix = '$annee§$session§';
     final next = {..._byKey}..removeWhere((key, _) => key.startsWith(prefix));
@@ -88,11 +80,6 @@ class ManualNotes {
   }
 }
 
-/// Overlays manual notes onto a fetched tree.
-///
-/// A note supplied by the school always wins — including an absence, which is
-/// a recorded zero rather than a gap — so a student can never overwrite real
-/// data, only fill blanks.
 List<Semestre> applyManualNotes({
   required List<Semestre> semesters,
   required ManualNotes manual,
@@ -144,7 +131,6 @@ List<Epreuve> _mergeEpreuves({
   return List.generate(matiere.epreuves.length, (index) {
     final epreuve = matiere.epreuves[index];
 
-    // Never shadow official data.
     if (epreuve.note != null || epreuve.absent) return epreuve;
 
     final note = manual.noteFor(manualKeyFor(

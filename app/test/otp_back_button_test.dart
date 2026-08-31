@@ -5,6 +5,8 @@ import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/credential_store.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -15,6 +17,12 @@ import 'package:isimg_app/screens/otp_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 
 class _OtpApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   @override
   Future<LoginResult> login(String username, String password) async =>
       LoginOtpRequired(session: 'sess', token2fa: 'tok');
@@ -72,11 +80,6 @@ void main() {
         ),
       );
 
-      // AuthGate itself never pushes a route for OtpScreen, but MaterialApp
-      // still wraps its `home` in one route on its own root Navigator. A real
-      // back press asks that Navigator to pop, and PopScope intercepts the
-      // attempt before it can happen — so driving the Navigator is what
-      // actually exercises the same path a physical/gesture back press takes.
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
       await navigator.maybePop();
       await tester.pump();

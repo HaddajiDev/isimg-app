@@ -1,15 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/demo_api_client.dart';
 import 'package:isimg_app/core/demo_data.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
 import 'package:isimg_app/models/schedule.dart';
 
-/// Records every call it receives; used to prove the demo client never
-/// forwards a demo session to the real one.
 class RecordingApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   int loginCalls = 0;
   int getGradesCalls = 0;
   int getScheduleCalls = 0;

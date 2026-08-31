@@ -32,7 +32,6 @@ void main() {
   });
 
   test('parses a moyenne carrying a trailing note', () {
-    // A year still in progress reports e.g. "0 (S1)".
     expect(year({'Moyenne': '0 (S1)'}).moyenneValue, 0);
     expect(year({'Moyenne': '11.13'}).moyenneValue, 11.13);
     expect(year({'Moyenne': '10,56'}).moyenneValue, 10.56);

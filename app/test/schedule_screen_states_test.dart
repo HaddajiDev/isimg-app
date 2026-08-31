@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/isimg/isimg_parser.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -18,8 +20,13 @@ import 'package:isimg_app/screens/schedule_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/schedule_grid.dart';
 
-/// Serves whatever week the test hands it.
 class _FixedApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   final Schedule schedule;
 
   _FixedApi(this.schedule);
@@ -71,9 +78,6 @@ Future<void> pumpSchedule(WidgetTester tester, Schedule schedule) async {
   await tester.pump(const Duration(milliseconds: 300));
 }
 
-/// The three ways a week can come back, each of which the screen must say
-/// something different about. Confusing them is how a full week ended up
-/// reading as a free one.
 void main() {
   setUp(() {
     FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform({});
@@ -103,7 +107,7 @@ void main() {
 
     expect(find.byType(ScheduleGrid), findsOneWidget);
     expect(find.text('Aucun cours cette semaine'), findsNothing);
-    // The make-up sessions stay called out here, not just in the parser.
+
     expect(find.text('RATTRAPAGE'), findsNWidgets(4));
   });
 
@@ -113,7 +117,6 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    // The site did not call the week free, yet nothing parsed out of it.
     await pumpSchedule(tester, Schedule(weekLabel: 'semaine', hasSessions: true));
 
     expect(find.text('Aucun cours cette semaine'), findsNothing);

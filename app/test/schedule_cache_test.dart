@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/schedule_cache.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -12,8 +14,13 @@ import 'package:isimg_app/providers/api_provider.dart';
 import 'package:isimg_app/providers/auth_provider.dart';
 import 'package:isimg_app/providers/schedule_provider.dart';
 
-/// Serves one schedule, then fails however the test asks.
 class FlakyApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   ApiException? failWith;
   int scheduleCalls = 0;
   String label = 'semaine en ligne';
@@ -112,7 +119,6 @@ void main() {
       final container = makeContainer(api);
       await container.read(scheduleProvider.future);
 
-      // Same week, now offline.
       api.failWith = ApiException('network_error');
       container.invalidate(scheduleProvider);
 
@@ -144,8 +150,6 @@ void main() {
     });
 
     test('an expired session is never masked by the cache', () async {
-      // Serving stale data here would strand the student on a dead session
-      // instead of letting the app renew it.
       final api = FlakyApi();
       final container = makeContainer(api);
       await container.read(scheduleProvider.future);
@@ -178,11 +182,10 @@ void main() {
 
   group('week selection', () {
     test('any day snaps to that week\'s Monday', () {
-      // Saturday 8 August 2026 belongs to the week starting Monday the 3rd.
       expect(mondayOf(DateTime(2026, 8, 8)), DateTime(2026, 8, 3));
-      // A Monday stays put.
+
       expect(mondayOf(DateTime(2026, 8, 3)), DateTime(2026, 8, 3));
-      // Sunday belongs to the week that began six days earlier.
+
       expect(mondayOf(DateTime(2026, 8, 9)), DateTime(2026, 8, 3));
     });
 

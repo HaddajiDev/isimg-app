@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /test/fixtures
+# Per-folder source documentation (extracted from code comments; local reference)
+lib/README.md
+lib/**/README.md

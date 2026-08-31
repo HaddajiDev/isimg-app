@@ -5,28 +5,18 @@ import '../core/credential_store.dart';
 import '../core/session_store.dart';
 import 'api_provider.dart';
 
-/// What a silent replay of a remembered login found out: whether it worked,
-/// and what — if anything — is worth telling the student when it did not.
 typedef _SilentLogin = ({bool signedIn, String? message});
 
 const _wrongCredentials = 'Identifiants incorrects';
 
-/// Nothing the student can do from in here: until the password is changed on
-/// the site, every login lands on its reset form. Saying "incorrect" would send
-/// them off retyping a password that is actually right.
 const _passwordExpired = 'Votre mot de passe ISIMG a expiré. Changez-le sur '
     'isimg.rnu.tn, puis reconnectez-vous.';
 
-/// For a login the student just typed: name the likely cause, defaulting to the
-/// credentials since those are what they chose.
 String _typedLoginMessage(Object error) =>
     error is ApiException && error.code == 'password_expired'
         ? _passwordExpired
         : _wrongCredentials;
 
-/// For a login replayed silently from storage: speak only when the site was
-/// explicit about it. A network blip is not the stored password's fault, and
-/// wrongly clearing it would log the student out for nothing.
 String? _replayedLoginMessage(Object error) {
   if (error is! ApiException) return null;
   return switch (error.code) {
@@ -36,7 +26,6 @@ String? _replayedLoginMessage(Object error) {
   };
 }
 
-/// Injectable so tests can supply in-memory stores.
 final credentialStoreProvider = Provider<CredentialStore>((ref) => CredentialStore());
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());
 
@@ -47,21 +36,14 @@ enum AuthStatus {
   otpPending,
   authenticated,
 
-  /// A stored session was not found, but a remembered login is being
-  /// replayed silently. Treated as authenticated by the UI — the shell and
-  /// any cached tab content render immediately rather than sitting behind a
-  /// spinner for a network round trip — but data providers should not treat
-  /// it as a confirmed session yet.
   reauthenticating,
 }
 
 class AuthState {
   final AuthStatus status;
 
-  /// Bumped whenever a new session is stored, so dependants refetch.
   final int sessionGeneration;
 
-  /// Interim state handed out by a login that needs the emailed code.
   final String? pendingSession;
   final String? pendingToken2fa;
 
@@ -77,14 +59,8 @@ class AuthState {
 
   const AuthState.initial() : this(status: AuthStatus.checking);
 
-  /// Strictly "there is a live, confirmed session" — data providers gate
-  /// fetches on this, since [AuthStatus.reauthenticating] has no session yet
-  /// to fetch with. The app shell itself renders for both; see [AuthGate].
   bool get isAuthenticated => status == AuthStatus.authenticated;
 
-  /// The shell (and any cached tab content) should render for this status —
-  /// broader than [isAuthenticated], since a remembered login is being
-  /// silently replayed and almost always still works.
   bool get showsAppShell =>
       status == AuthStatus.authenticated || status == AuthStatus.reauthenticating;
 
@@ -110,8 +86,6 @@ class AuthNotifier extends Notifier<AuthState> {
   CredentialStore get _credentials => ref.read(credentialStoreProvider);
   SessionStore get _sessions => ref.read(sessionStoreProvider);
 
-  /// Credentials from the login form, held only until we know whether the
-  /// login needs a code — they are saved once it actually succeeds.
   Credentials? _pendingCredentials;
 
   @override
@@ -134,9 +108,6 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      // No session, but the device remembers the login: sign in silently.
-      // The shell renders now rather than waiting on this network round
-      // trip — see AuthStatus.reauthenticating.
       final stored = await _credentials.read();
       if (stored != null) {
         state = state.copyWith(status: AuthStatus.reauthenticating);
@@ -148,13 +119,10 @@ class AuthNotifier extends Notifier<AuthState> {
         }
       }
     } catch (_) {
-      // Storage unavailable (e.g. a test harness) — fall through to the login
-      // screen rather than getting stuck on "checking".
     }
     state = state.copyWith(status: AuthStatus.unauthenticated);
   }
 
-  /// Signs in with saved credentials.
   Future<_SilentLogin> _attemptSilentLogin(Credentials credentials) async {
     try {
       final result = await _api.login(credentials.username, credentials.password);
@@ -162,16 +130,13 @@ class AuthNotifier extends Notifier<AuthState> {
         _markAuthenticated();
         return (signedIn: true, message: null);
       }
-      // A code is required, so this cannot be completed unattended — but there
-      // is nothing wrong with the password, so nothing to report either.
+
       return (signedIn: false, message: null);
     } catch (e) {
       return (signedIn: false, message: _replayedLoginMessage(e));
     }
   }
 
-  /// Called when the backend reports the upstream session has lapsed. Tries to
-  /// renew it in the background; only forces the login screen if that fails.
   Future<void> handleSessionExpired() async {
     final stored = await _credentials.read();
     if (stored != null) {
@@ -232,14 +197,10 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.submitting, errorMessage: null);
     try {
       await _api.verifyOtp(session: session, token2fa: token2fa, code: code);
-      // Only now is the login proven, so this is where it becomes worth
-      // remembering the credentials that got us here.
+
       await _persistPendingCredentials();
       _markAuthenticated();
     } catch (e) {
-      // An expired password cannot reach this step: the site stops at its reset
-      // form without ever sending a code, so `login` catches that case.
-      // Keep the interim state so the student can retype the code.
       state = pending.copyWith(
         status: AuthStatus.otpPending,
         errorMessage: 'Code invalide ou expiré',
@@ -247,8 +208,6 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Signing out is explicit, so the remembered login is discarded too —
-  /// otherwise the app would immediately sign itself back in.
   Future<void> logout({String? errorMessage}) async {
     _pendingCredentials = null;
     await _sessions.clear();

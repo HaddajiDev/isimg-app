@@ -1,21 +1,14 @@
 import '../models/grade_tree.dart';
 
-/// Where a displayed average came from.
 enum AverageSource {
-  /// Published by the school — authoritative.
   official,
 
-  /// Computed here from every épreuve of the matière, all notes present.
   computed,
 
-  /// Computed from only the notes posted so far; will move as more land.
   partial,
 
-  /// Includes at least one note the student typed in themselves — a
-  /// projection, not a reflection of anything the school has recorded.
   simulated,
 
-  /// Not enough data to compute anything.
   unavailable,
 }
 
@@ -32,30 +25,11 @@ class Average {
       source == AverageSource.partial ||
       source == AverageSource.simulated;
 
-  /// Depends on a note the student invented, so it must be read as a what-if.
   bool get isSimulated => source == AverageSource.simulated;
 
   bool get hasValue => value != null;
 }
 
-/// Recomputes the averages the site leaves blank mid-year.
-///
-/// Formulas (verified against a released bulletin):
-///  - matière   Σ(note × poids) ÷ Σ(poids)     over épreuves that have a note
-///  - unité     Σ(moyMatière × coefMatière) ÷ Σ(coefMatière)
-///  - semestre  Σ(moyUnité × coefUnité) ÷ Σ(coefUnité)
-///  - annuelle  mean of the semester averages
-///
-/// An official value always wins; computation only fills gaps.
-///
-/// Two known limits, both inherited from what the site exposes:
-///  - Rattrapage ("Rex") épreuves are excluded. How the school merges the
-///    control session with the main one isn't documented, and guessing it would
-///    silently produce wrong numbers, so those matières keep their official
-///    average and are otherwise reported as [AverageSource.unavailable].
-///  - Under the CC régime some notes are never published, so a computed average
-///    can differ from the eventual official one. Such results are flagged
-///    [AverageSource.partial].
 class MoyenneCalculator {
   const MoyenneCalculator();
 
@@ -64,8 +38,6 @@ class MoyenneCalculator {
       return Average(matiere.moyenne, AverageSource.official);
     }
 
-    // Presence of a rattrapage means the main-session weights no longer
-    // describe the outcome; refuse rather than invent a number.
     if (matiere.epreuves.any((e) => e.isRattrapage)) return Average.none;
 
     final weighted = matiere.epreuves.where((e) => e.hasNote && (e.poids ?? 0) > 0);
@@ -81,8 +53,6 @@ class MoyenneCalculator {
     }
     if (weight <= 0) return Average.none;
 
-    // Renormalising by the weight actually covered turns a half-graded matière
-    // into "standing so far" instead of understating it.
     final expected = matiere.epreuves
         .where((e) => (e.poids ?? 0) > 0)
         .fold<double>(0, (sum, e) => sum + e.poids!);
@@ -90,8 +60,7 @@ class MoyenneCalculator {
 
     return Average(
       total / weight,
-      // A student-supplied note outranks the complete/partial distinction:
-      // the figure is hypothetical either way.
+
       usedManual
           ? AverageSource.simulated
           : (isComplete ? AverageSource.computed : AverageSource.partial),
@@ -117,7 +86,6 @@ class MoyenneCalculator {
     );
   }
 
-  /// Mean of the semester averages, matching the published annual moyenne.
   Average annualAverage(List<Semestre> semestres) {
     final averages = semestres.map(semestreAverage).where((a) => a.hasValue).toList();
     if (averages.isEmpty) return Average.none;
@@ -145,7 +113,6 @@ class MoyenneCalculator {
     return Average(total / weight, _worstSource(used));
   }
 
-  /// An aggregate is only as trustworthy as its shakiest input.
   AverageSource _worstSource(List<Average> parts) {
     if (parts.any((p) => p.source == AverageSource.simulated)) {
       return AverageSource.simulated;

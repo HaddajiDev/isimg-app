@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
 import 'package:isimg_app/models/schedule.dart';
@@ -13,9 +15,13 @@ import 'package:isimg_app/screens/grades_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 import 'package:isimg_app/widgets/student_avatar.dart';
 
-/// Mirrors the shape of the 2026-2027 stand-in bulletin: notes posted, no
-/// averages published, a single semester.
 class MidYearApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   @override
   Future<Grades> getGrades({String? au, String? ss}) async {
     return Grades.fromJson({
@@ -110,7 +116,6 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Only the DS (10) is graded, so the standing is 10.00 and provisional.
     expect(find.text('~10.00'), findsWidgets);
     expect(find.text('–'), findsOneWidget);
   });
@@ -124,7 +129,6 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Tap the ungraded Ex chip.
     await tester.tap(find.text('Ex (0.7)'));
     await tester.pumpAndSettle();
     expect(find.text('Note provisoire'), findsOneWidget);
@@ -133,11 +137,9 @@ void main() {
     await tester.tap(find.text('Enregistrer'));
     await tester.pumpAndSettle();
 
-    // 10*0.3 + 15*0.7 = 13.50, now a full simulation.
     final chip = tester.widget<Text>(find.text('~13.50').first);
     expect(chip.style?.color, AppColors.purple);
 
-    // The banner reports the active projection.
     expect(find.textContaining('1 note provisoire'), findsOneWidget);
   });
 
@@ -156,7 +158,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('~13.50'), findsWidgets);
 
-    // Reopen and delete.
     await tester.tap(find.text('Ex (0.7)'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Supprimer cette note'));
@@ -175,7 +176,6 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pump(const Duration(milliseconds: 400));
 
-    // The graded DS must not be tappable, so no sheet appears.
     await tester.tap(find.text('DS (0.3)'));
     await tester.pumpAndSettle();
     expect(find.text('Note provisoire'), findsNothing);
@@ -195,7 +195,6 @@ void main() {
     await tester.tap(find.text('Enregistrer'));
     await tester.pumpAndSettle();
 
-    // Sheet stays open with an explanation.
     expect(find.textContaining('entre 0 et 20'), findsOneWidget);
   });
 }

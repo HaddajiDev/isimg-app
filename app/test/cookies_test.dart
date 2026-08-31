@@ -24,8 +24,6 @@ void main() {
   });
 
   test('a rotated cookie replaces the previous value', () {
-    // The site reissues its anti-replay cookie constantly; keeping the stale
-    // one is what made earlier requests fail with "not authorised".
     final cookies = Cookies({'iDzfG79': 'old'});
     cookies.applySetCookies(['iDzfG79=fresh; path=/; secure']);
 
@@ -70,7 +68,6 @@ void main() {
   });
 
   test('unreadable storage decodes to an empty jar rather than throwing', () {
-    // A corrupt jar must send the student to the login screen, not crash.
     expect(Cookies.decode(null).isEmpty, isTrue);
     expect(Cookies.decode('').isEmpty, isTrue);
     expect(Cookies.decode('not base64 !!').isEmpty, isTrue);

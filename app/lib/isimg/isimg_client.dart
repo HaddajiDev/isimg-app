@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import '../core/api_client.dart';
 import '../core/api_exception.dart';
 import '../core/session_store.dart';
+import '../models/absences.dart';
+import '../models/exam.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
@@ -15,15 +17,9 @@ const _checkAccountUrl = '$_base/fra/intranet/check_account';
 const _verify2faUrl = '$_base/fra/intranet/verify_2fa';
 const _rdnUrl = '$_base/fra/intranet/etudiant/rdn';
 const _emploiUrl = '$_base/fra/intranet/etudiant/emploi';
-// Note the shorter `/etu/` segment — this page is not under `/etudiant/`.
+
 const _cursusUrl = '$_base/fra/intranet/etu/moncursus';
 
-/// Talks to ISIMG straight from the phone.
-///
-/// The university network refuses connections from foreign datacentres, so no
-/// hosted backend can do this — but a student's phone is on a Tunisian network
-/// and reaches the site fine. Nothing leaves the device except the requests the
-/// site itself would receive from a browser.
 class IsimgClient implements ApiClient {
   final Dio _dio;
   final SessionStore _sessions;
@@ -36,8 +32,7 @@ class IsimgClient implements ApiClient {
     _dio.options
       ..connectTimeout = const Duration(seconds: 20)
       ..receiveTimeout = const Duration(seconds: 30)
-      // The site answers 200 for denied pages, so nothing is gained by letting
-      // Dio throw on status codes; every caller inspects the body instead.
+
       ..validateStatus = ((_) => true)
       ..followRedirects = true
       ..headers = {
@@ -48,8 +43,6 @@ class IsimgClient implements ApiClient {
       };
   }
 
-  // ---- transport ----
-
   Future<Response<String>> _send(
     String url, {
     Map<String, String>? form,
@@ -59,8 +52,7 @@ class IsimgClient implements ApiClient {
       if (cookies.header.isNotEmpty) 'Cookie': cookies.header,
       if (form != null) ...{
         'Content-Type': 'application/x-www-form-urlencoded',
-        // The pages carry <meta name="referrer" content="no-referrer">, which
-        // makes a browser send Origin: null on same-origin form posts.
+
         'Origin': 'null',
       },
     };
@@ -83,7 +75,6 @@ class IsimgClient implements ApiClient {
       );
     }
 
-    // Fold in rotated cookies or the following request will be rejected.
     final setCookies = response.headers.map['set-cookie'];
     if (setCookies != null) cookies.applySetCookies(setCookies);
 
@@ -110,11 +101,8 @@ class IsimgClient implements ApiClient {
     return match?[1];
   }
 
-  // ---- auth ----
-
   @override
   Future<LoginResult> login(String username, String password) async {
-    // Replay the device token so the site recognises us and skips the code.
     final previous = await _storedCookies();
     final cookies = Cookies();
     final trusted = previous.trustedDevice;
@@ -130,11 +118,6 @@ class IsimgClient implements ApiClient {
       form: {'token': token, 'username': username, 'password': password},
     ));
 
-    // Wrong credentials can still carry a meta-refresh (e.g. a generic one
-    // back to the homepage), so "there is a redirect" is not proof the login
-    // worked. What check_account actually rendered for this exact request is
-    // the reliable signal — re-fetching the redirect target isn't, since that
-    // page can look this way for reasons unrelated to auth too.
     if (_parser.looksLikeLoginPage(loginBody)) {
       throw ApiException('invalid_credentials', statusCode: 401);
     }
@@ -142,11 +125,6 @@ class IsimgClient implements ApiClient {
     final redirect = _extractMetaRefreshUrl(loginBody);
     if (redirect == null) throw ApiException('invalid_credentials', statusCode: 401);
 
-    // The password was right, but the site has expired it: it answers with its
-    // own reset form at /fra/intranet/changepwd and stops there — no 2FA step
-    // and no emailed code. That redirect is neither the login page nor
-    // verify_2fa, so it used to fall through to "logged in" and store a session
-    // that could never read a page, which then looked like a lapsed session.
     if (redirect.contains('changepwd')) {
       throw ApiException('password_expired', statusCode: 403);
     }
@@ -176,7 +154,7 @@ class IsimgClient implements ApiClient {
     final body = _body(await _send(
       _verify2faUrl,
       cookies: cookies,
-      // Asking to be remembered is what earns the trusted_device cookie.
+
       form: {'token2fa': token2fa, 'code': code, 'remember_device': 'on'},
     ));
 
@@ -188,9 +166,6 @@ class IsimgClient implements ApiClient {
     await _persist(cookies);
   }
 
-  // ---- data ----
-
-  /// Omitting [au]/[ss] resolves the most recent année whose results are out.
   @override
   Future<Grades> getGrades({String? au, String? ss}) async {
     final cookies = await _requireCookies();
@@ -198,8 +173,7 @@ class IsimgClient implements ApiClient {
     Future<String> load(String auCode, String ssCode) async => _body(await _send(
           _rdnUrl,
           cookies: cookies,
-          // The form only honours these when they arrive together; posting one
-          // alone silently returns the default page.
+
           form: {'f_au': auCode, 'f_ss': ssCode},
         ));
 
@@ -214,9 +188,6 @@ class IsimgClient implements ApiClient {
     if (annee != null) {
       body = await load(annee, session);
     } else {
-      // Nothing selected upstream: walk newest -> oldest and keep the first
-      // année whose results are published. An upcoming année still lists its
-      // modules, so a moyenne générale is the only reliable signal.
       for (final option in options.annees) {
         final candidate = await load(option.code, session);
         if (_parser.isUnauthorized(candidate)) {
@@ -242,9 +213,6 @@ class IsimgClient implements ApiClient {
   Future<Schedule> getSchedule({String? week}) async {
     final cookies = await _requireCookies();
 
-    // The site's own JS builds these as /emploi/<monday>/<groupId>, group "0"
-    // meaning the student's default. Without the group segment the route is
-    // unrecognised and silently serves the homepage.
     final url = (week != null && week.isNotEmpty) ? '$_emploiUrl/$week/0' : _emploiUrl;
 
     final body = _body(await _send(url, cookies: cookies));
@@ -265,20 +233,23 @@ class IsimgClient implements ApiClient {
     return _parser.parseCursus(body);
   }
 
+  @override
+  Future<Absences> getAbsences() async => throw ApiException('unsupported');
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() async => throw ApiException('unsupported');
+
   Future<Cookies> _requireCookies() async {
     final cookies = await _storedCookies();
     if (cookies.isEmpty) throw ApiException('no_session', statusCode: 401);
     return cookies;
   }
 
-  /// Distinguishes a lapsed session from the homepage the site serves for
-  /// anything it will not show us.
   void _guard(String body, bool Function(String) looksRight) {
     if (_parser.isUnauthorized(body)) {
       throw ApiException('session_expired', statusCode: 401);
     }
     if (!looksRight(body)) {
-      // Being bounced to the homepage almost always means the cookies lapsed.
       throw ApiException('session_expired', statusCode: 401);
     }
   }

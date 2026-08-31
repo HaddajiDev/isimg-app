@@ -27,8 +27,6 @@ void main() {
     });
 
     test('returns null for a missing or unreadable session', () {
-      // A corrupt session must degrade to a normal 2FA login, not throw and
-      // take the login screen down with it.
       expect(SessionStore.trustedDeviceOf(null), isNull);
       expect(SessionStore.trustedDeviceOf(''), isNull);
       expect(SessionStore.trustedDeviceOf('not base64 !!'), isNull);

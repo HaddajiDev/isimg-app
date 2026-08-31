@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
 import 'package:isimg_app/models/schedule.dart';
@@ -15,6 +17,12 @@ import 'package:isimg_app/screens/schedule_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 
 class _CountingApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   int scheduleCalls = 0;
 
   @override
@@ -72,9 +80,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(api.scheduleCalls, 1);
 
-    // A drag gesture is what a finger does; what matters here is that the
-    // RefreshIndicator wired up actually asks for fresh data when triggered,
-    // which is the same onRefresh plumbing Notes and Profil already use.
     final indicator = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator));
     await indicator.onRefresh();
     await tester.pump(const Duration(milliseconds: 300));

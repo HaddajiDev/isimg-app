@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:isimg_app/core/api_client.dart';
+import 'package:isimg_app/models/absences.dart';
+import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/profile_cache.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -14,8 +16,13 @@ import 'package:isimg_app/providers/profile_provider.dart';
 
 Profile _profile(String name) => Profile.fromJson({'prenom': name, 'years': <dynamic>[]});
 
-/// Serves one profile, then fails however the test asks.
 class FlakyApi implements ApiClient {
+  @override
+  Future<Absences> getAbsences() => throw UnimplementedError();
+
+  @override
+  Future<ExamsSchedule> getUpcomingExams() => throw UnimplementedError();
+
   ApiException? failWith;
   int profileCalls = 0;
   String name = 'profil en ligne';

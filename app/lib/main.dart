@@ -29,9 +29,7 @@ class IsimgApp extends StatelessWidget {
     return MaterialApp(
       title: 'ISIMG',
       debugShowCheckedModeBanner: false,
-      // The interface is French throughout, so Material's own strings — the
-      // date picker's buttons, month and weekday names — must match rather
-      // than defaulting to English.
+
       locale: const Locale('fr'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -39,7 +37,7 @@ class IsimgApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('fr'), Locale('en')],
-      // Dark-only by design; there is no light variant to fall back to.
+
       theme: buildAppTheme(),
       darkTheme: buildAppTheme(),
       themeMode: ThemeMode.dark,
@@ -59,8 +57,7 @@ class AuthGate extends ConsumerWidget {
       AuthStatus.checking => const Scaffold(body: Center(child: CircularProgressIndicator())),
       AuthStatus.unauthenticated || AuthStatus.submitting => const LoginScreen(),
       AuthStatus.otpPending => const OtpScreen(),
-      // A remembered login is being silently replayed in the background;
-      // show the shell now rather than a spinner for that round trip.
+
       AuthStatus.authenticated || AuthStatus.reauthenticating => const HomeScreen(),
     };
   }

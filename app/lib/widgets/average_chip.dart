@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import '../core/moyenne_calculator.dart';
 import '../theme/app_theme.dart';
 
-/// Renders an average, making clear whether it is published or derived.
-///
-/// Estimates are prefixed with "~" and drawn with a dashed-looking outline, so
-/// a provisional figure is never mistaken for an official result.
 class AverageChip extends StatelessWidget {
   final Average average;
   final double fontSize;
@@ -20,8 +16,7 @@ class AverageChip extends StatelessWidget {
 
   static Color colorFor(Average average) {
     if (!average.hasValue) return AppColors.textMuted;
-    // A simulation is the student's own hypothesis, so it borrows the accent
-    // colour instead of a pass/fail verdict it hasn't earned.
+
     if (average.isSimulated) return AppColors.purple;
     if (average.source == AverageSource.partial) return AppColors.warning;
     return average.value! >= 10 ? AppColors.green : AppColors.danger;
@@ -62,7 +57,6 @@ class AverageChip extends StatelessWidget {
   }
 }
 
-/// Explains the "~" marker once per screen.
 class EstimateLegend extends StatelessWidget {
   const EstimateLegend({super.key});
 

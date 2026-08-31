@@ -27,10 +27,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final theme = Theme.of(context);
     final mono = theme.extension<AppTypography>()!.monoFamily;
 
-    // There is no Navigator route to pop back to here — AuthGate just swaps
-    // widgets on auth status — so the hardware/gesture back button would
-    // otherwise fall through to exiting the app instead of abandoning the
-    // pending login. Route it through the same cleanup as the arrow icon.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -125,7 +121,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                           ),
                         ),
                         onChanged: (value) {
-                          // Auto-submit once the full code is entered.
                           if (value.length == 6 && !isSubmitting) _submit();
                         },
                         onSubmitted: (_) => _submit(),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 
-/// Outcome of the manual-note sheet.
 sealed class ManualNoteResult {}
 
 class ManualNoteSaved extends ManualNoteResult {
@@ -12,7 +11,6 @@ class ManualNoteSaved extends ManualNoteResult {
 
 class ManualNoteDeleted extends ManualNoteResult {}
 
-/// Prompts for a hypothetical note on an épreuve the school has not graded.
 Future<ManualNoteResult?> showManualNoteSheet(
   BuildContext context, {
   required String matiere,
@@ -90,7 +88,7 @@ class _ManualNoteSheetState extends State<_ManualNoteSheet> {
         left: AppSpacing.xl,
         right: AppSpacing.xl,
         top: AppSpacing.xl,
-        // Clear the keyboard.
+
         bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
       ),
       child: Column(
