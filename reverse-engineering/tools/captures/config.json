@@ -1,0 +1,15 @@
+{
+  "req": 1,
+  "args": {
+    "instId": "1"
+  },
+  "response": [
+    {
+      "sceances_exclus": "[\r\n  {\r\n    \"jour\": 3,\r\n    \"seance\": 4\r\n  },\r\n  {\r\n    \"jour\": 6,\r\n    \"seance\": 4\r\n  },\r\n  {\r\n    \"jour\": 3,\r\n    \"seance\": 5\r\n  },\r\n  {\r\n    \"jour\": 6,\r\n    \"seance\": 5\r\n  },\r\n  {\r\n    \"jour\": 3,\r\n    \"seance\": 6\r\n  },\r\n  {\r\n    \"jour\": 6,\r\n    \"seance\": 6\r\n  }\r\n]",
+      "nbre_max_demandes": "7",
+      "annee_univ": "13",
+      "taux_elimination": "20",
+      "au_resultats": "12"
+    }
+  ]
+}

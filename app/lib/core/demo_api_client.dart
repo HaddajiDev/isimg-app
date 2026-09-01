@@ -1,7 +1,12 @@
 import 'api_client.dart';
 import 'demo_data.dart';
 import '../models/absences.dart';
+import '../models/calendar.dart';
 import '../models/exam.dart';
+import '../models/news.dart';
+import '../models/notifications.dart';
+import '../models/stage.dart';
+import '../models/student.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
@@ -61,5 +66,35 @@ class DemoAwareApiClient implements ApiClient {
   Future<ExamsSchedule> getUpcomingExams() {
     if (_demoSession) return Future.value(demoExams());
     return _delegate.getUpcomingExams();
+  }
+
+  @override
+  Future<UniversityCalendar> getUniversityCalendar() {
+    if (_demoSession) return Future.value(demoUniversityCalendar());
+    return _delegate.getUniversityCalendar();
+  }
+
+  @override
+  Future<StudentInfo> getStudentDetails() {
+    if (_demoSession) return Future.value(demoStudentInfo());
+    return _delegate.getStudentDetails();
+  }
+
+  @override
+  Future<NewsFeed> getNews() {
+    if (_demoSession) return Future.value(demoNews());
+    return _delegate.getNews();
+  }
+
+  @override
+  Future<NotifData> getNotifications() {
+    if (_demoSession) return Future.value(demoNotifications());
+    return _delegate.getNotifications();
+  }
+
+  @override
+  Future<Stages> getStages() {
+    if (_demoSession) return Future.value(demoStages());
+    return _delegate.getStages();
   }
 }

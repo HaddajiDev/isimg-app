@@ -6,14 +6,15 @@ void main() {
     final uri = StudentAvatar.avatarUri('Ahmed Haddaji');
 
     expect(uri.host, 'api.dicebear.com');
-    expect(uri.path, '/10.x/critters/svg');
+    expect(uri.path, '/10.x/critters/png');
     expect(uri.queryParameters['seed'], 'ahmed haddaji');
   });
 
-  test('sends nothing but the seed', () {
+  test('requests a raster PNG so every renderer paints it identically', () {
     final uri = StudentAvatar.avatarUri('Ahmed Haddaji');
 
-    expect(uri.queryParameters.keys, ['seed']);
+    expect(uri.path, endsWith('/png'));
+    expect(uri.queryParameters['size'], '160');
     expect(uri.toString(), isNot(contains('animationVariant')));
     expect(uri.toString(), isNot(contains('tags')));
   });

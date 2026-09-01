@@ -8,6 +8,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:isimg_app/core/api_client.dart';
 import 'package:isimg_app/models/absences.dart';
 import 'package:isimg_app/models/exam.dart';
+import 'package:isimg_app/models/calendar.dart';
+import 'package:isimg_app/models/news.dart';
+import 'package:isimg_app/models/notifications.dart';
+import 'package:isimg_app/models/stage.dart';
+import 'package:isimg_app/models/student.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/models/grades.dart';
 import 'package:isimg_app/models/profile.dart';
@@ -17,6 +22,21 @@ import 'package:isimg_app/screens/login_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
 
 class _ExpiredPasswordApi implements ApiClient {
+  @override
+  Future<StudentInfo> getStudentDetails() => throw UnimplementedError();
+
+  @override
+  Future<NewsFeed> getNews() => throw UnimplementedError();
+
+  @override
+  Future<NotifData> getNotifications() => throw UnimplementedError();
+
+  @override
+  Future<Stages> getStages() => throw UnimplementedError();
+
+  @override
+  Future<UniversityCalendar> getUniversityCalendar() => throw UnimplementedError();
+
   @override
   Future<Absences> getAbsences() => throw UnimplementedError();
 

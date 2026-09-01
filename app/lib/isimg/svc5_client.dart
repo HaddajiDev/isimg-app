@@ -7,7 +7,12 @@ import '../core/api_exception.dart';
 import '../core/credential_store.dart';
 import '../core/session_store.dart';
 import '../models/absences.dart';
+import '../models/calendar.dart';
 import '../models/exam.dart';
+import '../models/news.dart';
+import '../models/notifications.dart';
+import '../models/stage.dart';
+import '../models/student.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
@@ -27,10 +32,17 @@ class Svc5Client implements ApiClient {
   static const _qLoadConfig = 1;
   static const _qLoadAnneesUniv = 2;
   static const _qGetEtuEdT = 8;
+  static const _qGetCalUniv = 4;
+  static const _qGetNews = 5;
+  static const _qGetStage = 38;
+  static const _qGetNotifs = 68;
   static const _qGetProfileEtu = 9;
   static const _qGetReleveNotes = 65;
   static const _qGetAbsencesEtu = 66;
   static const _qGetNextExams = 69;
+
+  static const _newsCount = '30';
+  static const _maxNotifs = '30';
 
   final Dio _dio;
   final SessionStore _sessions;
@@ -300,6 +312,79 @@ class Svc5Client implements ApiClient {
     return ExamsSchedule(exams: exams);
   }
 
+  @override
+  Future<UniversityCalendar> getUniversityCalendar() async {
+    final session = await _requireSession();
+    final rows = await _query(_qGetCalUniv, {
+      'user_type': '1',
+      'au': '${session.au}',
+      'classe_id': session.classeId,
+    });
+    final events = rows.whereType<Map<String, dynamic>>().map(CalendarEvent.fromJson).toList()
+      ..sort((a, b) {
+        final byDate = a.sortKey.compareTo(b.sortKey);
+        return byDate != 0 ? byDate : a.ordre.compareTo(b.ordre);
+      });
+    return UniversityCalendar(events: events);
+  }
+
+  @override
+  Future<StudentInfo> getStudentDetails() async {
+    final session = await _requireSession();
+    final prof = _first(await _query(_qGetProfileEtu, {'id': session.userId}));
+    if (prof == null) throw ApiException('session_expired', statusCode: 401);
+    return StudentInfo.fromJson(prof);
+  }
+
+  @override
+  Future<NewsFeed> getNews() async {
+    final session = await _requireSession();
+    final rows = await _query(_qGetNews, {
+      'user_type': '1',
+      'user_id': session.userId,
+      'nbre': _newsCount,
+      'sdate': _now(),
+      'groupe_id': session.gid,
+      'classe_id': session.classeId,
+    });
+    final items = rows.whereType<Map<String, dynamic>>().map(NewsItem.fromJson).toList()
+      ..sort((a, b) =>
+          (b.created ?? DateTime(0)).compareTo(a.created ?? DateTime(0)));
+    return NewsFeed(items: items);
+  }
+
+  @override
+  Future<NotifData> getNotifications() async {
+    final session = await _requireSession();
+    final record = _first(await _query(_qGetNotifs, {
+      'id': session.userId,
+      'date_limite_news': _epoch(),
+      'date_limite_demandes': _epoch(),
+      'date_limite_absences': _epoch(),
+      'au': '${session.au}',
+      'MaxPostsNotifs': _maxNotifs,
+    }));
+    if (record == null) return const NotifData();
+    return NotifData.fromJson(record);
+  }
+
+  @override
+  Future<Stages> getStages() async {
+    final session = await _requireSession();
+    final results = await Future.wait(StageType.values.map((type) async {
+      try {
+        final rec = _first(await _query(_qGetStage, {
+          'nce': session.nce,
+          'type': '${type.code}',
+        }));
+        return rec == null ? null : Stage.fromJson(rec, type: type);
+      } catch (_) {
+        return null;
+      }
+    }));
+    return Stages(stages: results.whereType<Stage>().toList());
+  }
+
   Future<List<dynamic>?> _findEpreuveTemplate(Svc5Session session) async {
     for (var id = session.au - 1; id >= session.au - 3 && id > 0; id--) {
       final rec = _first(await _query(_qGetReleveNotes, {
@@ -421,6 +506,13 @@ class Svc5Client implements ApiClient {
 
   static String _fmt(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static String _dateTime(DateTime d) =>
+      '${_fmt(d)} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}:${d.second.toString().padLeft(2, '0')}';
+
+  static String _now() => _dateTime(DateTime.now());
+
+  static String _epoch() => '2000-01-01 00:00:00';
 }
 
 class _LoginRaw {

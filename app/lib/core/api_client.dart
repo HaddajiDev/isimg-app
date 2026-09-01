@@ -1,5 +1,10 @@
 import '../models/absences.dart';
+import '../models/calendar.dart';
 import '../models/exam.dart';
+import '../models/news.dart';
+import '../models/notifications.dart';
+import '../models/stage.dart';
+import '../models/student.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
@@ -33,4 +38,14 @@ abstract interface class ApiClient {
   Future<Absences> getAbsences();
 
   Future<ExamsSchedule> getUpcomingExams();
+
+  Future<UniversityCalendar> getUniversityCalendar();
+
+  Future<StudentInfo> getStudentDetails();
+
+  Future<NewsFeed> getNews();
+
+  Future<NotifData> getNotifications();
+
+  Future<Stages> getStages();
 }

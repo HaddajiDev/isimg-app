@@ -5,6 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:isimg_app/core/api_client.dart';
 import 'package:isimg_app/models/absences.dart';
 import 'package:isimg_app/models/exam.dart';
+import 'package:isimg_app/models/calendar.dart';
+import 'package:isimg_app/models/news.dart';
+import 'package:isimg_app/models/notifications.dart';
+import 'package:isimg_app/models/stage.dart';
+import 'package:isimg_app/models/student.dart';
 import 'package:isimg_app/core/api_exception.dart';
 import 'package:isimg_app/core/grades_cache.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -21,6 +26,21 @@ Grades _grades(String label) => Grades.fromJson({
     });
 
 class FlakyApi implements ApiClient {
+  @override
+  Future<StudentInfo> getStudentDetails() => throw UnimplementedError();
+
+  @override
+  Future<NewsFeed> getNews() => throw UnimplementedError();
+
+  @override
+  Future<NotifData> getNotifications() => throw UnimplementedError();
+
+  @override
+  Future<Stages> getStages() => throw UnimplementedError();
+
+  @override
+  Future<UniversityCalendar> getUniversityCalendar() => throw UnimplementedError();
+
   @override
   Future<Absences> getAbsences() => throw UnimplementedError();
 

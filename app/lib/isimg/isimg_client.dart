@@ -4,7 +4,12 @@ import '../core/api_client.dart';
 import '../core/api_exception.dart';
 import '../core/session_store.dart';
 import '../models/absences.dart';
+import '../models/calendar.dart';
 import '../models/exam.dart';
+import '../models/news.dart';
+import '../models/notifications.dart';
+import '../models/stage.dart';
+import '../models/student.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
@@ -238,6 +243,21 @@ class IsimgClient implements ApiClient {
 
   @override
   Future<ExamsSchedule> getUpcomingExams() async => throw ApiException('unsupported');
+
+  @override
+  Future<UniversityCalendar> getUniversityCalendar() async => throw ApiException('unsupported');
+
+  @override
+  Future<StudentInfo> getStudentDetails() async => throw ApiException('unsupported');
+
+  @override
+  Future<NewsFeed> getNews() async => throw ApiException('unsupported');
+
+  @override
+  Future<NotifData> getNotifications() async => throw ApiException('unsupported');
+
+  @override
+  Future<Stages> getStages() async => throw ApiException('unsupported');
 
   Future<Cookies> _requireCookies() async {
     final cookies = await _storedCookies();

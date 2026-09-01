@@ -1,5 +1,10 @@
 import '../models/absences.dart';
+import '../models/calendar.dart';
 import '../models/exam.dart';
+import '../models/news.dart';
+import '../models/notifications.dart';
+import '../models/stage.dart';
+import '../models/student.dart';
 import '../models/grade_tree.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
@@ -8,6 +13,7 @@ import '../models/seance.dart';
 
 const demoUsername = 'demo';
 const demoPassword = 'demo1234';
+const demoAcademicYear = '2025/2026';
 
 final _annees = [
   SelectOption(code: '2025/2026', label: '2025/2026', selected: true),
@@ -250,6 +256,47 @@ Absences demoAbsences() {
   );
 }
 
+StudentInfo demoStudentInfo() {
+  return const StudentInfo(
+    cin: '00000000',
+    nce: '2024000',
+    prenom: 'Étudiant',
+    nom: 'Démo',
+    sexe: '0',
+    classeName: 'LSIM3',
+    niveau: '3',
+    diplome: 'Licence Appliquée en Informatique et Multimédia',
+    groupe: 'G1',
+    dateNaissance: '2003-05-14',
+    lieuNaissance: 'Gabès',
+    nationalite: '788',
+    ville: 'Gabès',
+    codePostal: '6000',
+    mobile: '20 000 000',
+    email: 'etudiant.demo@isimg.tn',
+    anneeBac: '2021',
+    typeBac: '1',
+    sessionBac: '1',
+    mentionBac: '2',
+  );
+}
+
+UniversityCalendar demoUniversityCalendar() {
+  final y = DateTime.now().year;
+  DateTime d(int m, int day) => DateTime(y, m, day);
+  return UniversityCalendar(
+    events: [
+      CalendarEvent(name: 'Rentrée universitaire', semestre: 1, concerned: 'Tous les niveaux', start: d(9, 15), end: d(9, 15), ordre: 1),
+      CalendarEvent(name: 'Période des devoirs surveillés (S1)', semestre: 1, concerned: 'Tous les niveaux', start: d(11, 3), end: d(11, 8), ordre: 2),
+      CalendarEvent(name: 'Fin des cours du semestre 1', semestre: 1, concerned: 'Tous les niveaux', start: d(12, 19), end: d(12, 19), ordre: 3),
+      CalendarEvent(name: 'Examens du semestre 1', semestre: 1, concerned: 'Tous les niveaux', start: d(12, 28), end: DateTime(y + 1, 1, 8), ordre: 4),
+      CalendarEvent(name: 'Reprise des cours (S2)', semestre: 2, concerned: 'Tous les niveaux', start: DateTime(y + 1, 1, 12), end: DateTime(y + 1, 1, 12), ordre: 1),
+      CalendarEvent(name: 'Examens du semestre 2', semestre: 2, concerned: 'Tous les niveaux', start: DateTime(y + 1, 5, 11), end: DateTime(y + 1, 5, 22), ordre: 2),
+      CalendarEvent(name: 'Soutenances des projets de fin d\'études', semestre: 2, concerned: 'Classes terminales', start: DateTime(y + 1, 6, 15), end: DateTime(y + 1, 6, 19), ordre: 3),
+    ],
+  );
+}
+
 ExamsSchedule demoExams() {
   final now = DateTime.now();
   DateTime at(int addDays, int h, int m) =>
@@ -287,6 +334,108 @@ ExamsSchedule demoExams() {
         dureeMinutes: 60,
         salle: 'Lab07',
         enseignant: 'R. Chamsi',
+      ),
+    ],
+  );
+}
+
+NewsFeed demoNews() {
+  final now = DateTime.now();
+  DateTime ago(int days, [int h = 9]) =>
+      DateTime(now.year, now.month, now.day, h).subtract(Duration(days: days));
+  return NewsFeed(
+    items: [
+      NewsItem(
+        id: '3',
+        auteur: 'Administration',
+        titre: 'Reprise des cours du semestre 2',
+        description: 'Les cours du second semestre reprennent lundi prochain.',
+        body:
+            'Chers étudiants,\n\nLes cours du semestre 2 reprendront le lundi 12 janvier selon l\'emploi du temps publié sur l\'application. Merci de consulter votre planning avant la reprise.\n\nBon courage à toutes et à tous.',
+        groupes: const ['Tous les niveaux'],
+        created: ago(1),
+      ),
+      NewsItem(
+        id: '2',
+        auteur: 'Service des stages',
+        titre: 'Dépôt des conventions de stage ouvrier',
+        description:
+            'La période de dépôt des conventions est ouverte jusqu\'au 30 du mois.',
+        body:
+            'Le service des stages informe les étudiants concernés que le dépôt des conventions de stage ouvrier est ouvert.\n\nLes conventions doivent être déposées, signées et cachetées, au bureau des stages avant la date limite.',
+        groupes: const ['1ère année', '2ème année'],
+        created: ago(4, 14),
+      ),
+      NewsItem(
+        id: '1',
+        auteur: 'Club Robotique ISIMG',
+        titre: 'Atelier Arduino — inscriptions ouvertes',
+        description: 'Un atelier d\'initiation à l\'Arduino aura lieu ce samedi.',
+        body:
+            'Le club robotique organise un atelier d\'initiation à l\'Arduino ce samedi à 10h au laboratoire d\'électronique.\n\nPlaces limitées — inscrivez-vous auprès des membres du club.',
+        groupes: const ['Tous les niveaux'],
+        created: ago(9, 16),
+      ),
+    ],
+  );
+}
+
+NotifData demoNotifications() {
+  return const NotifData(
+    items: [
+      NotifItem(
+        title: 'Nouvelle actualité',
+        message: 'Reprise des cours du semestre 2',
+        pageId: 1,
+      ),
+      NotifItem(
+        title: 'Note publiée',
+        message: 'Une nouvelle note est disponible en Architecture SOA.',
+        pageId: -1,
+      ),
+      NotifItem(
+        title: 'Absence enregistrée',
+        message: 'Une absence a été saisie le 03/11 (séance 2).',
+        pageId: -1,
+      ),
+    ],
+    counts: [
+      NotifCount(kind: NotifKind.news, count: 1),
+      NotifCount(kind: NotifKind.notes, count: 1),
+      NotifCount(kind: NotifKind.absence, count: 1),
+    ],
+  );
+}
+
+Stages demoStages() {
+  final now = DateTime.now();
+  DateTime d(int m, int day) => DateTime(now.year, m, day);
+  return Stages(
+    stages: [
+      Stage(
+        type: StageType.ouvrier,
+        debut: d(7, 1),
+        fin: d(7, 31),
+        lieu: 'Tunisie Telecom — Gabès',
+        responsable: 'M. Bouzid',
+        adresse: 'Avenue Farhat Hached, Gabès',
+        email: 'contact@tt.tn',
+        phone: '75000000',
+        sujet: 'Découverte de l\'infrastructure réseau d\'un opérateur télécom.',
+        dateDepot: d(8, 5),
+        validation: 1,
+        evaluation: 4,
+      ),
+      Stage(
+        type: StageType.technicien,
+        debut: d(7, 1),
+        fin: d(8, 15),
+        lieu: 'Sofrecom — Tunis',
+        responsable: 'Mme Trabelsi',
+        adresse: 'Les Berges du Lac, Tunis',
+        sujet: 'Développement d\'un module de supervision applicative.',
+        validation: 0,
+        evaluation: 0,
       ),
     ],
   );

@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,8 +32,8 @@ class StudentAvatar extends StatefulWidget {
 
   static Uri avatarUri(String seed) => Uri.https(
         'api.dicebear.com',
-        '/10.x/critters/svg',
-        {'seed': canonicalSeed(seed)},
+        '/10.x/critters/png',
+        {'seed': canonicalSeed(seed), 'size': '160'},
       );
 
   @override
@@ -41,10 +41,10 @@ class StudentAvatar extends StatefulWidget {
 }
 
 class _StudentAvatarState extends State<StudentAvatar> {
-  static const _cachePrefix = 'avatar_svg_v1:';
-  static final Map<String, String> _memoryCache = {};
+  static const _cachePrefix = 'avatar_png_v2:';
+  static final Map<String, Uint8List> _memoryCache = {};
 
-  String? _svg;
+  Uint8List? _png;
 
   @override
   void initState() {
@@ -58,43 +58,52 @@ class _StudentAvatarState extends State<StudentAvatar> {
     if (oldWidget.seed != widget.seed) _resolve();
   }
 
-  String get _cacheKey => '$_cachePrefix${StudentAvatar.canonicalSeed(widget.seed)}';
+  static String _keyFor(String seed) =>
+      '$_cachePrefix${StudentAvatar.canonicalSeed(seed)}';
 
+  // The seed can change mid-flight (e.g. a drawer header that starts on a
+  // placeholder name, then rebuilds once the real one loads). Snapshot it so a
+  // stale fetch never writes its bytes under the new seed's cache key, and only
+  // apply the result while this widget still wants that seed.
   Future<void> _resolve() async {
-    if (widget.seed.trim().isEmpty || StudentAvatar.debugDisableRemote) return;
+    final seed = widget.seed;
+    if (seed.trim().isEmpty || StudentAvatar.debugDisableRemote) return;
+    final key = _keyFor(seed);
 
-    final cached = _memoryCache[_cacheKey] ?? await _readDisk();
+    final cached = _memoryCache[key] ?? await _readDisk(key);
     if (cached != null) {
-      _memoryCache[_cacheKey] = cached;
-      if (mounted) setState(() => _svg = cached);
+      _memoryCache[key] = cached;
+      if (mounted && widget.seed == seed) setState(() => _png = cached);
       return;
     }
 
-    final fetched = await _fetch();
+    final fetched = await _fetch(seed);
     if (fetched == null) return;
 
-    _memoryCache[_cacheKey] = fetched;
-    await _writeDisk(fetched);
-    if (mounted) setState(() => _svg = fetched);
+    _memoryCache[key] = fetched;
+    await _writeDisk(key, fetched);
+    if (mounted && widget.seed == seed) setState(() => _png = fetched);
   }
 
-  Future<String?> _readDisk() async {
+  Future<Uint8List?> _readDisk(String key) async {
     try {
-      return (await SharedPreferences.getInstance()).getString(_cacheKey);
+      final encoded = (await SharedPreferences.getInstance()).getString(key);
+      return encoded == null ? null : base64Decode(encoded);
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> _writeDisk(String svg) async {
+  Future<void> _writeDisk(String key, Uint8List png) async {
     try {
-      await (await SharedPreferences.getInstance()).setString(_cacheKey, svg);
+      await (await SharedPreferences.getInstance())
+          .setString(key, base64Encode(png));
     } catch (_) {
     }
   }
 
-  Future<String?> _fetch() async {
-    final uri = StudentAvatar.avatarUri(widget.seed);
+  Future<Uint8List?> _fetch(String seed) async {
+    final uri = StudentAvatar.avatarUri(seed);
     try {
       final response = await http
           .get(uri)
@@ -105,12 +114,16 @@ class _StudentAvatarState extends State<StudentAvatar> {
         return null;
       }
 
-      final body = utf8.decode(response.bodyBytes, allowMalformed: true);
-      if (!body.contains('<svg')) {
-        debugPrint('avatar: response was not an SVG');
+      final bytes = response.bodyBytes;
+      if (bytes.length < 8 ||
+          bytes[0] != 0x89 ||
+          bytes[1] != 0x50 ||
+          bytes[2] != 0x4E ||
+          bytes[3] != 0x47) {
+        debugPrint('avatar: response was not a PNG');
         return null;
       }
-      return body;
+      return bytes;
     } catch (error) {
       debugPrint('avatar: fetch failed for $uri — $error');
       return null;
@@ -120,7 +133,7 @@ class _StudentAvatarState extends State<StudentAvatar> {
   @override
   Widget build(BuildContext context) {
     final size = widget.size;
-    final svg = _svg;
+    final png = _png;
 
     return Container(
       height: size,
@@ -136,17 +149,17 @@ class _StudentAvatarState extends State<StudentAvatar> {
           ),
         ],
       ),
-      child: svg == null
+      child: png == null
           ? _InitialsAvatar(initials: widget.initials, size: size)
           : ClipOval(
-              child: SvgPicture.string(
-                svg,
+              child: Image.memory(
+                png,
                 height: size,
                 width: size,
                 fit: BoxFit.cover,
-
+                gaplessPlayback: true,
                 excludeFromSemantics: true,
-                placeholderBuilder: (_) =>
+                errorBuilder: (context, error, stack) =>
                     _InitialsAvatar(initials: widget.initials, size: size),
               ),
             ),
