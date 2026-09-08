@@ -41,11 +41,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           ),
         ),
         body: DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: RadialGradient(
               center: Alignment(0, -0.6),
               radius: 1.1,
-              colors: [Color(0xFF0E2318), AppColors.canvas],
+              colors: [Color(0xFF0E2318), context.c.canvas],
             ),
           ),
           child: SafeArea(
@@ -92,7 +92,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         'Saisissez le code à 6 chiffres envoyé à votre adresse email.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.c.textSecondary,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
@@ -111,7 +111,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 12,
-                          color: AppColors.textPrimary,
+                          color: context.c.textPrimary,
                         ),
                         decoration: const InputDecoration(
                           counterText: '',
@@ -163,12 +163,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                           backgroundColor: AppColors.green,
                         ),
                         child: isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppColors.textMuted,
+                                  color: context.c.textMuted,
                                 ),
                               )
                             : const Text('Vérifier et continuer'),

@@ -35,11 +35,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.7),
+            center: const Alignment(0, -0.7),
             radius: 1.1,
-            colors: [Color(0xFF1B1233), AppColors.canvas],
+            colors: [const Color(0xFF1B1233), context.c.canvas],
           ),
         ),
         child: SafeArea(
@@ -78,7 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             'Espace étudiant',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.c.textSecondary,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xxl),
@@ -139,12 +139,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           FilledButton(
                             onPressed: isSubmitting ? null : _submit,
                             child: isSubmitting
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: AppColors.textMuted,
+                                      color: context.c.textMuted,
                                     ),
                                   )
                                 : const Text('Se connecter'),
@@ -154,7 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             'Vos identifiants ISIMG ne sont jamais stockés.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textMuted,
+                              color: context.c.textMuted,
                             ),
                           ),
                         ],
@@ -203,8 +203,8 @@ class _RememberMeToggle extends StatelessWidget {
                 value: value,
                 onChanged: (next) => onChanged(next ?? false),
                 activeColor: AppColors.purple,
-                side: const BorderSide(
-                  color: AppColors.borderStrong,
+                side: BorderSide(
+                  color: context.c.borderStrong,
                   width: 1.5,
                 ),
               ),
@@ -221,7 +221,7 @@ class _RememberMeToggle extends StatelessWidget {
                     'Enregistre vos identifiants sur cet appareil uniquement, '
                     'pour reconnecter automatiquement.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
+                      color: context.c.textMuted,
                       fontSize: 11,
                     ),
                   ),

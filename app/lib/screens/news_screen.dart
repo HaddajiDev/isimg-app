@@ -45,7 +45,7 @@ class NewsScreen extends ConsumerWidget {
           data: (feed) => RefreshIndicator(
             onRefresh: () => ref.refresh(newsProvider.future),
             color: AppColors.purple,
-            backgroundColor: AppColors.surfaceRaised,
+            backgroundColor: context.c.surfaceRaised,
             child: feed.isEmpty ? const _EmptyNews() : _NewsList(items: feed.items),
           ),
         ),
@@ -127,16 +127,16 @@ class _NewsCard extends StatelessWidget {
                         item.auteur!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: theme.textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
                       ),
                     Text(
                       frTimeAgo(item.created),
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                      style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              Icon(Icons.chevron_right_rounded, color: context.c.textMuted),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -147,7 +147,7 @@ class _NewsCard extends StatelessWidget {
               summary,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
             ),
           ],
           if (item.groupes.isNotEmpty) ...[
@@ -185,21 +185,21 @@ class _NewsDetailScreen extends StatelessWidget {
             Row(
               children: [
                 if (item.auteur != null) ...[
-                  const Icon(Icons.person_outline_rounded, size: 15, color: AppColors.textMuted),
+                  Icon(Icons.person_outline_rounded, size: 15, color: context.c.textMuted),
                   const SizedBox(width: AppSpacing.xs),
                   Flexible(
                     child: Text(
                       item.auteur!,
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                      style: theme.textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                 ],
-                const Icon(Icons.schedule_rounded, size: 15, color: AppColors.textMuted),
+                Icon(Icons.schedule_rounded, size: 15, color: context.c.textMuted),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   frDate(item.created),
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                 ),
               ],
             ),

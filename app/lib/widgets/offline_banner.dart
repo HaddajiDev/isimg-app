@@ -31,7 +31,7 @@ class OfflineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'Hors ligne — copie enregistrée $_age',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
             ),
           ),
         ],

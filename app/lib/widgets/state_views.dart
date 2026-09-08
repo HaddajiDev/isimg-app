@@ -19,7 +19,7 @@ class MessageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = tint ?? AppColors.textMuted;
+    final color = tint ?? context.c.textMuted;
 
     return Center(
       child: Padding(
@@ -51,7 +51,7 @@ class MessageView extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
+                    ?.copyWith(color: context.c.textSecondary),
               ),
             ],
             if (action != null) ...[const SizedBox(height: AppSpacing.xl), action!],
@@ -104,8 +104,8 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
           width: widget.width,
           decoration: BoxDecoration(
             color: Color.lerp(
-              AppColors.surface,
-              AppColors.surfaceRaised,
+              context.c.surface,
+              context.c.surfaceRaised,
               _controller.value,
             ),
             borderRadius: widget.borderRadius ?? BorderRadius.circular(AppRadius.sm),

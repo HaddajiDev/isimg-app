@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/otp_screen.dart';
 import 'screens/home_screen.dart';
@@ -12,17 +13,23 @@ void main() {
   runApp(const ProviderScope(child: IsimgApp()));
 }
 
-class IsimgApp extends StatelessWidget {
+class IsimgApp extends ConsumerWidget {
   const IsimgApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final platformDark =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && platformDark);
+    final palette = isDark ? AppPalette.dark : AppPalette.light;
+
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppColors.surface,
-        systemNavigationBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: palette.surface,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
     );
 
@@ -38,9 +45,9 @@ class IsimgApp extends StatelessWidget {
       ],
       supportedLocales: const [Locale('fr'), Locale('en')],
 
-      theme: buildAppTheme(),
-      darkTheme: buildAppTheme(),
-      themeMode: ThemeMode.dark,
+      theme: buildAppTheme(Brightness.light),
+      darkTheme: buildAppTheme(Brightness.dark),
+      themeMode: mode,
       home: const AuthGate(),
     );
   }

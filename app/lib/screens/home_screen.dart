@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/update_banner.dart';
 import 'absences_screen.dart';
 import 'exams_screen.dart';
 import 'grades_screen.dart';
@@ -82,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               tab.subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textMuted,
+                color: context.c.textMuted,
                 fontSize: 12,
               ),
             ),
@@ -99,14 +100,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: PageView(
-          controller: _pageController,
-          physics: const ClampingScrollPhysics(),
-          onPageChanged: (i) => setState(() => _index = i),
-          children: [for (final t in _tabs) t.screen],
-        ),
+      body: Column(
+        children: [
+          const UpdateBanner(),
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _onScroll,
+              child: PageView(
+                controller: _pageController,
+                physics: const ClampingScrollPhysics(),
+                onPageChanged: (i) => setState(() => _index = i),
+                children: [for (final t in _tabs) t.screen],
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -127,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surfaceRaised,
+        backgroundColor: context.c.surfaceRaised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),

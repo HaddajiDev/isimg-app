@@ -15,7 +15,7 @@ class AverageChip extends StatelessWidget {
   });
 
   static Color colorFor(Average average) {
-    if (!average.hasValue) return AppColors.textMuted;
+    if (!average.hasValue) return AppColors.neutral;
 
     if (average.isSimulated) return AppColors.purple;
     if (average.source == AverageSource.partial) return AppColors.warning;
@@ -66,7 +66,7 @@ class EstimateLegend extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.info_outline_rounded, size: 14, color: AppColors.textMuted),
+        Icon(Icons.info_outline_rounded, size: 14, color: context.c.textMuted),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text.rich(
@@ -74,7 +74,7 @@ class EstimateLegend extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: AppColors.textMuted, fontSize: 11.5),
+                  ?.copyWith(color: context.c.textMuted, fontSize: 11.5),
               children: [
                 TextSpan(
                   text: '~',

@@ -15,13 +15,13 @@ class VersionFooter extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.c.border)),
       ),
       child: Text(
         'ISIMG Étudiant · v${info.version} (${info.buildNumber})',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
+              color: context.c.textMuted,
               fontSize: 10.5,
               letterSpacing: 0.2,
             ),

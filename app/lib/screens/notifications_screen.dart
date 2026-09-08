@@ -45,7 +45,7 @@ class NotificationsScreen extends ConsumerWidget {
           data: (data) => RefreshIndicator(
             onRefresh: () => ref.refresh(notificationsProvider.future),
             color: AppColors.purple,
-            backgroundColor: AppColors.surfaceRaised,
+            backgroundColor: context.c.surfaceRaised,
             child: _NotifContent(data: data),
           ),
         ),
@@ -109,7 +109,7 @@ class _SummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   total > 1 ? 'nouveautés depuis votre dernière visite' : 'nouveauté depuis votre dernière visite',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
                 ),
               ),
             ],
@@ -195,7 +195,7 @@ class _NotifCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.message,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
                   ),
                 ],
               ],
@@ -213,7 +213,7 @@ Color _kindColor(NotifKind kind) => switch (kind) {
       NotifKind.demande => AppColors.info,
       NotifKind.exam => AppColors.warning,
       NotifKind.notes => AppColors.green,
-      NotifKind.autre => AppColors.textSecondary,
+      NotifKind.autre => AppColors.neutral,
     };
 
 IconData _kindIcon(NotifKind kind) => switch (kind) {

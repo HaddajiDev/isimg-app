@@ -90,9 +90,9 @@ class ScheduleGrid extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.c.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.c.border),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -156,15 +156,15 @@ class _SlotHeaderCell extends StatelessWidget {
       width: ScheduleGrid._slotColumnWidth,
       height: ScheduleGrid._headerHeight,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceRaised,
-        border: Border(right: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.c.surfaceRaised,
+        border: Border(right: BorderSide(color: context.c.border)),
       ),
       child: Text(
         'Séance',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.c.textSecondary,
             ),
       ),
     );
@@ -190,7 +190,7 @@ class _HeaderRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      color: AppColors.surfaceRaised,
+      color: context.c.surfaceRaised,
       child: Row(
         children: [
           for (final weekday in weekdays)
@@ -203,7 +203,7 @@ class _HeaderRow extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isToday ? AppColors.purpleGlow : null,
-                    border: const Border(right: BorderSide(color: AppColors.border)),
+                    border: Border(right: BorderSide(color: context.c.border)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -212,14 +212,14 @@ class _HeaderRow extends StatelessWidget {
                         _names[weekday - 1],
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isToday ? AppColors.purple : AppColors.textPrimary,
+                          color: isToday ? AppColors.purple : context.c.textPrimary,
                         ),
                       ),
                       Text(
                         _date(weekday),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 11,
-                          color: isToday ? AppColors.purple : AppColors.textMuted,
+                          color: isToday ? AppColors.purple : context.c.textMuted,
                         ),
                       ),
                     ],
@@ -249,10 +249,10 @@ class _SlotCell extends StatelessWidget {
       height: height,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isCurrent ? AppColors.purpleGlow : AppColors.surfaceRaised,
-        border: const Border(
-          right: BorderSide(color: AppColors.border),
-          top: BorderSide(color: AppColors.border),
+        color: isCurrent ? AppColors.purpleGlow : context.c.surfaceRaised,
+        border: Border(
+          right: BorderSide(color: context.c.border),
+          top: BorderSide(color: context.c.border),
         ),
       ),
       child: Column(
@@ -264,7 +264,7 @@ class _SlotCell extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 11,
                     fontWeight: isCurrent ? FontWeight.w700 : null,
-                    color: isCurrent ? AppColors.purple : AppColors.textSecondary,
+                    color: isCurrent ? AppColors.purple : context.c.textSecondary,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
             ),
@@ -291,7 +291,7 @@ class _GridCell extends StatelessWidget {
         SeanceType.cours => AppColors.purple,
         SeanceType.td => AppColors.green,
         SeanceType.tp => AppColors.info,
-        SeanceType.autre => AppColors.textMuted,
+        SeanceType.autre => AppColors.neutral,
       };
 
   @override
@@ -304,8 +304,8 @@ class _GridCell extends StatelessWidget {
       decoration: BoxDecoration(
         color: washAlpha > 0 ? AppColors.purple.withValues(alpha: washAlpha) : null,
         border: Border(
-          right: BorderSide(color: AppColors.border),
-          top: BorderSide(color: AppColors.border),
+          right: BorderSide(color: context.c.border),
+          top: BorderSide(color: context.c.border),
         ),
       ),
 
@@ -393,7 +393,7 @@ class _SeanceBlock extends StatelessWidget {
                 fontSize: 11,
                 height: 1.2,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.c.textPrimary,
               ),
             ),
           ),
@@ -404,7 +404,7 @@ class _SeanceBlock extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontSize: 9.5,
-                color: AppColors.textSecondary,
+                color: context.c.textSecondary,
               ),
             ),
           if (seance.salle case final room?)

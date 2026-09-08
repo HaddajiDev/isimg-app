@@ -31,7 +31,7 @@ class CalendarScreen extends ConsumerWidget {
               Text(
                 year,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
+                      color: context.c.textMuted,
                       fontSize: 12,
                     ),
               ),
@@ -67,7 +67,7 @@ class CalendarScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 onRefresh: () => ref.refresh(calendarProvider.future),
                 color: AppColors.purple,
-                backgroundColor: AppColors.surfaceRaised,
+                backgroundColor: context.c.surfaceRaised,
                 child: _CalendarContent(calendar: view.calendar),
               ),
             ),
@@ -214,7 +214,7 @@ class _NextEventCard extends StatelessWidget {
               const Spacer(),
               Text(
                 'S${event.semestre}',
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
               ),
             ],
           ),
@@ -239,7 +239,7 @@ class _NextEventCard extends StatelessWidget {
               event.concerned!,
               textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
             ),
           ],
         ],
@@ -298,7 +298,7 @@ class _TimelineTile extends StatelessWidget {
         : isNext
             ? AppColors.purple
             : past
-                ? AppColors.textMuted
+                ? context.c.textMuted
                 : AppColors.info;
 
     return IntrinsicHeight(
@@ -309,18 +309,18 @@ class _TimelineTile extends StatelessWidget {
             width: 24,
             child: Column(
               children: [
-                Container(width: 2, height: 6, color: isFirst ? Colors.transparent : AppColors.border),
+                Container(width: 2, height: 6, color: isFirst ? Colors.transparent : context.c.border),
                 Container(
                   height: 14,
                   width: 14,
                   decoration: BoxDecoration(
-                    color: past && !ongoing ? AppColors.surface : color,
+                    color: past && !ongoing ? context.c.surface : color,
                     shape: BoxShape.circle,
                     border: Border.all(color: color, width: 2),
                   ),
                 ),
                 Expanded(
-                  child: Container(width: 2, color: isLast ? Colors.transparent : AppColors.border),
+                  child: Container(width: 2, color: isLast ? Colors.transparent : context.c.border),
                 ),
               ],
             ),
@@ -360,7 +360,7 @@ class _TimelineTile extends StatelessWidget {
                                 event.concerned!,
                                 textAlign: TextAlign.right,
                                 textDirection: TextDirection.rtl,
-                                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                                style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                               ),
                             ],
                           ],
@@ -414,7 +414,7 @@ class _DateBadge extends StatelessWidget {
             Text(
               '→ ${event.end!.day.toString().padLeft(2, '0')} ${_mois[event.end!.month - 1]}',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted, fontSize: 9),
+              style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted, fontSize: 9),
             ),
           ],
         ],

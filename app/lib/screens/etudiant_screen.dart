@@ -49,7 +49,7 @@ class EtudiantScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 onRefresh: () => ref.refresh(studentProvider.future),
                 color: AppColors.purple,
-                backgroundColor: AppColors.surfaceRaised,
+                backgroundColor: context.c.surfaceRaised,
                 child: _StudentContent(student: view.student),
               ),
             ),
@@ -173,7 +173,7 @@ class _HeaderCard extends StatelessWidget {
                 ar,
                 textAlign: TextAlign.center,
                 textDirection: TextDirection.rtl,
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
               ),
             ),
           const SizedBox(height: AppSpacing.md),
@@ -184,7 +184,7 @@ class _HeaderCard extends StatelessWidget {
             children: [
               if (student.classeName != null) _Chip(student.classeName!, AppColors.purple),
               if (student.niveau != null) _Chip('Niveau ${student.niveau}', AppColors.info),
-              if (student.nce != null) _Chip(student.nce!, AppColors.textSecondary),
+              if (student.nce != null) _Chip(student.nce!, context.c.textSecondary),
             ],
           ),
         ],
@@ -214,7 +214,7 @@ class _Section extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: context.c.textMuted,
                     letterSpacing: 0.6,
                     fontWeight: FontWeight.w600,
                   ),
@@ -255,7 +255,7 @@ class _Row extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textMuted),
+          Icon(icon, size: 18, color: context.c.textMuted),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -263,7 +263,7 @@ class _Row extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                 ),
                 const SizedBox(height: 2),
                 Text(

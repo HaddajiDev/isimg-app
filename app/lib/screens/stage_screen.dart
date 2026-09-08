@@ -50,7 +50,7 @@ class StageScreen extends ConsumerWidget {
                 child: RefreshIndicator(
                   onRefresh: () => ref.refresh(stageProvider.future),
                   color: AppColors.purple,
-                  backgroundColor: AppColors.surfaceRaised,
+                  backgroundColor: context.c.surfaceRaised,
                   child: view.stages.isEmpty
                       ? const _EmptyStages()
                       : _StageList(stages: view.stages.stages),
@@ -156,7 +156,7 @@ class _StageCard extends StatelessWidget {
                 color: switch (stage.validation) {
                   1 => AppColors.green,
                   2 => AppColors.danger,
-                  _ => AppColors.textSecondary,
+                  _ => context.c.textSecondary,
                 },
                 icon: Icons.assignment_turned_in_outlined,
               ),
@@ -222,13 +222,13 @@ class _Row extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textMuted),
+          Icon(icon, size: 18, color: context.c.textMuted),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted)),
+                Text(label, style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted)),
                 const SizedBox(height: 2),
                 Text(value ?? '', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
               ],

@@ -48,7 +48,7 @@ class ScheduleScreen extends ConsumerWidget {
             data: (view) => RefreshIndicator(
               onRefresh: () => ref.refresh(scheduleProvider.future),
               color: AppColors.purple,
-              backgroundColor: AppColors.surfaceRaised,
+              backgroundColor: context.c.surfaceRaised,
               child: _ScheduleContent(
                 schedule: view.schedule,
                 weekStart: ref.watch(selectedWeekProvider),
@@ -176,7 +176,7 @@ class _OfflineBanner extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: AppColors.textSecondary),
+                  ?.copyWith(color: context.c.textSecondary),
             ),
           ),
         ],
@@ -202,9 +202,9 @@ class _WeekNavigator extends ConsumerWidget {
       margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.c.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.c.border),
       ),
       child: Row(
         children: [
@@ -233,7 +233,7 @@ class _WeekNavigator extends ConsumerWidget {
                         : 'Appuyez pour revenir à aujourd\'hui',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isCurrentWeek ? AppColors.green : AppColors.textMuted,
+                          color: isCurrentWeek ? AppColors.green : context.c.textMuted,
                           fontSize: 11,
                         ),
                   ),
@@ -288,8 +288,8 @@ class _NavButton extends StatelessWidget {
       tooltip: tooltip,
 
       style: IconButton.styleFrom(
-        backgroundColor: AppColors.surfaceRaised,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: context.c.surfaceRaised,
+        foregroundColor: context.c.textPrimary,
         minimumSize: const Size(kMinTouchTarget, kMinTouchTarget),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),

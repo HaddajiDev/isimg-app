@@ -40,7 +40,7 @@ class ProfileScreen extends ConsumerWidget {
       data: (profile) => RefreshIndicator(
         onRefresh: () => ref.refresh(profileProvider.future),
         color: AppColors.purple,
-        backgroundColor: AppColors.surfaceRaised,
+        backgroundColor: context.c.surfaceRaised,
         child: _ProfileContent(profile: profile),
       ),
     );
@@ -160,7 +160,7 @@ class _IdentityCard extends StatelessWidget {
               profile.filiere!,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+                color: context.c.textSecondary,
               ),
             ),
           ],
@@ -176,7 +176,7 @@ class _IdentityCard extends StatelessWidget {
                   monoFamily: mono,
                 ),
               ),
-              Container(width: 1, height: 34, color: AppColors.border),
+              Container(width: 1, height: 34, color: context.c.border),
               Expanded(
                 child: _InfoField(
                   label: 'N° Inscription',
@@ -218,7 +218,7 @@ class _InfoField extends StatelessWidget {
             fontFamily: monoFamily,
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: context.c.textPrimary,
           ),
         ),
         const SizedBox(height: 2),
@@ -226,7 +226,7 @@ class _InfoField extends StatelessWidget {
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+          ).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
         ),
       ],
     );
@@ -248,7 +248,7 @@ class _YearTile extends StatelessWidget {
     if (year.isInProgress) return AppColors.purple;
     if (year.isPassed) return AppColors.green;
     if (year.isRepeated) return AppColors.danger;
-    return AppColors.textSecondary;
+    return AppColors.neutral;
   }
 
   IconData get _statusIcon {
@@ -276,7 +276,7 @@ class _YearTile extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: isFirst ? Colors.transparent : AppColors.border,
+                    color: isFirst ? Colors.transparent : context.c.border,
                   ),
                 ),
                 Container(
@@ -292,7 +292,7 @@ class _YearTile extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: isLast ? Colors.transparent : AppColors.border,
+                    color: isLast ? Colors.transparent : context.c.border,
                   ),
                 ),
               ],
@@ -315,7 +315,7 @@ class _YearTile extends StatelessWidget {
                             fontFamily: mono,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: context.c.textPrimary,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
@@ -330,7 +330,7 @@ class _YearTile extends StatelessWidget {
                           Text(
                             year.statut!,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textMuted,
+                              color: context.c.textMuted,
                             ),
                           ),
                       ],
@@ -358,7 +358,7 @@ class _YearTile extends StatelessWidget {
                           monoFamily: mono,
 
                           color: year.isInProgress
-                              ? AppColors.textSecondary
+                              ? context.c.textSecondary
                               : ((year.moyenneValue ?? 0) >= 10
                                     ? AppColors.green
                                     : AppColors.danger),
@@ -406,13 +406,13 @@ class _Metric extends StatelessWidget {
             fontFamily: monoFamily,
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: color ?? AppColors.textPrimary,
+            color: color ?? context.c.textPrimary,
           ),
         ),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textMuted,
+            color: context.c.textMuted,
             fontSize: 11,
           ),
         ),
@@ -434,14 +434,14 @@ class _Tag extends StatelessWidget {
         vertical: 2,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: context.c.surfaceRaised,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.c.border),
       ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: context.c.textSecondary,
           fontSize: 11,
         ),
       ),

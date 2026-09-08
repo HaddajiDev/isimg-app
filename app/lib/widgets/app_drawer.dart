@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/academic_year_provider.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/theme_provider.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/etudiant_screen.dart';
 import '../screens/news_screen.dart';
@@ -22,7 +23,7 @@ class AppDrawer extends ConsumerWidget {
     final name = identity?.name ?? 'Étudiant';
 
     return Drawer(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.c.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +54,7 @@ class AppDrawer extends ConsumerWidget {
                             identity.subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                            style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                           ),
                       ],
                     ),
@@ -99,11 +100,12 @@ class AppDrawer extends ConsumerWidget {
               onTap: () => _go(context, const CalendarScreen()),
             ),
             const Spacer(),
+            const _ThemeToggle(),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.lg),
               child: Text(
                 'Application non officielle',
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
               ),
             ),
           ],
@@ -126,6 +128,76 @@ class AppDrawer extends ConsumerWidget {
   static String _initials(String name) {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
     return words.map((w) => w[0].toUpperCase()).take(2).join();
+  }
+}
+
+class _ThemeToggle extends ConsumerWidget {
+  const _ThemeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: AppSpacing.sm),
+            child: Text(
+              'APPARENCE',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: context.c.textMuted,
+                letterSpacing: 0.8,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.brightness_auto_rounded, size: 18),
+                  tooltip: 'Système',
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_rounded, size: 18),
+                  tooltip: 'Clair',
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_rounded, size: 18),
+                  tooltip: 'Sombre',
+                ),
+              ],
+              selected: {mode},
+              showSelectedIcon: false,
+              onSelectionChanged: (s) =>
+                  ref.read(themeModeProvider.notifier).set(s.first),
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.purple
+                      : context.c.textSecondary,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.purpleGlow
+                      : Colors.transparent,
+                ),
+                side: WidgetStatePropertyAll(BorderSide(color: context.c.border)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -180,7 +252,7 @@ class _DrawerButton extends StatelessWidget {
                         value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: theme.textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
                       ),
                     ],
                   ),
@@ -204,7 +276,7 @@ class _DrawerButton extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                 ],
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                Icon(Icons.chevron_right_rounded, color: context.c.textMuted),
               ],
             ),
           ),

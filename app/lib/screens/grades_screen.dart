@@ -51,7 +51,7 @@ class GradesScreen extends ConsumerWidget {
       data: (grades) => RefreshIndicator(
         onRefresh: () => ref.refresh(gradesProvider.future),
         color: AppColors.purple,
-        backgroundColor: AppColors.surfaceRaised,
+        backgroundColor: context.c.surfaceRaised,
         child: _GradesContent(grades: grades),
       ),
     );
@@ -262,7 +262,7 @@ class _UniteCard extends StatelessWidget {
                         unite.libelle,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                          color: context.c.textSecondary,
                         ),
                       ),
                       Text(
@@ -271,7 +271,7 @@ class _UniteCard extends StatelessWidget {
                           if (unite.coefficient != null) 'coef. ${_trim(unite.coefficient!)}',
                         ].join(' · '),
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textMuted, fontSize: 11),
+                            ?.copyWith(color: context.c.textMuted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -347,7 +347,7 @@ class _MatiereRow extends ConsumerWidget {
                             'coef. ${_trim(matiere.coefficient!)}',
                         ].join(' · '),
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textMuted, fontSize: 11),
+                            ?.copyWith(color: context.c.textMuted, fontSize: 11),
                       ),
                   ],
                 ),
@@ -427,8 +427,8 @@ class _EpreuveChip extends StatelessWidget {
     final (text, color) = switch (epreuve) {
       Epreuve(absent: true) => ('Abs.', AppColors.danger),
       Epreuve(isManual: true, note: final note?) => (_trim(note), AppColors.purple),
-      Epreuve(note: final note?) => (_trim(note), AppColors.textPrimary),
-      _ => ('–', AppColors.textMuted),
+      Epreuve(note: final note?) => (_trim(note), context.c.textPrimary),
+      _ => ('–', context.c.textMuted),
     };
 
     final isManual = epreuve.isManual;
@@ -437,10 +437,10 @@ class _EpreuveChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       constraints: const BoxConstraints(minHeight: 30),
       decoration: BoxDecoration(
-        color: isManual ? AppColors.purple.withValues(alpha: 0.10) : AppColors.surfaceRaised,
+        color: isManual ? AppColors.purple.withValues(alpha: 0.10) : context.c.surfaceRaised,
         borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
-          color: isManual ? AppColors.purple.withValues(alpha: 0.55) : AppColors.border,
+          color: isManual ? AppColors.purple.withValues(alpha: 0.55) : context.c.border,
         ),
       ),
       child: Row(
@@ -451,7 +451,7 @@ class _EpreuveChip extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
-                ?.copyWith(color: AppColors.textMuted),
+                ?.copyWith(color: context.c.textMuted),
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
@@ -469,7 +469,7 @@ class _EpreuveChip extends StatelessWidget {
             Icon(
               isManual ? Icons.edit_rounded : Icons.add_rounded,
               size: 13,
-              color: isManual ? AppColors.purple : AppColors.textMuted,
+              color: isManual ? AppColors.purple : context.c.textMuted,
             ),
           ],
         ],
@@ -524,7 +524,7 @@ class _ManualNotesBanner extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: AppColors.textSecondary),
+                  ?.copyWith(color: context.c.textSecondary),
             ),
           ),
           TextButton(
@@ -606,9 +606,9 @@ class _OptionDropdown extends StatelessWidget {
       height: kMinTouchTarget + 6,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: context.c.surfaceRaised,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.c.border),
       ),
       child: Row(
         children: [
@@ -621,11 +621,11 @@ class _OptionDropdown extends StatelessWidget {
                 isExpanded: true,
                 isDense: true,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                dropdownColor: AppColors.surfaceRaised,
+                dropdownColor: context.c.surfaceRaised,
                 icon: const Icon(Icons.expand_more_rounded, size: 20),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: context.c.textPrimary,
                     ),
                 items: options
                     .map((option) => DropdownMenuItem(
@@ -683,7 +683,7 @@ class _SummaryCard extends StatelessWidget {
                     ),
                     Text(
                       'Niveau ${grades.niveau ?? '—'}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                      style: theme.textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
                     ),
                   ],
                 ),
@@ -694,7 +694,7 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               grades.filiere!,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
@@ -744,14 +744,14 @@ class _StatTile extends StatelessWidget {
               fontFamily: mono,
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.c.textPrimary,
               height: 1.1,
             ),
           ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
         ),
       ],
     );

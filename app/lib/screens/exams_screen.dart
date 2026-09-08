@@ -46,7 +46,7 @@ class ExamsScreen extends ConsumerWidget {
             child: RefreshIndicator(
               onRefresh: () => ref.refresh(examsProvider.future),
               color: AppColors.purple,
-              backgroundColor: AppColors.surfaceRaised,
+              backgroundColor: context.c.surfaceRaised,
               child: _ExamsContent(schedule: view.schedule),
             ),
           ),
@@ -205,11 +205,11 @@ class _NextExamCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.calendar_today_rounded, size: 16, color: context.c.textSecondary),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 exam.day == null ? 'Date à confirmer' : longDate(exam.day!),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.c.textPrimary),
               ),
             ],
           ),
@@ -231,7 +231,7 @@ class _NextExamCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       exam.enseignant!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                     ),
                   ),
                 if (exam.eliminatoire) const _Pill(label: 'Éliminatoire', color: AppColors.danger),
@@ -315,7 +315,7 @@ class _DayHeader extends StatelessWidget {
           Text(
             day == null ? 'Date à confirmer' : longDate(day!),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.c.textSecondary,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),
@@ -369,14 +369,14 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: small ? 13 : 15, color: AppColors.textMuted),
+        Icon(icon, size: small ? 13 : 15, color: context.c.textMuted),
         const SizedBox(width: 4),
         Text(
           text,
           style: (small
                   ? Theme.of(context).textTheme.bodySmall
                   : Theme.of(context).textTheme.bodyMedium)
-              ?.copyWith(fontFamily: mono, color: AppColors.textSecondary),
+              ?.copyWith(fontFamily: mono, color: context.c.textSecondary),
         ),
       ],
     );
@@ -438,7 +438,7 @@ Color examTypeColor(ExamType type) => switch (type) {
       ExamType.oral => AppColors.info,
       ExamType.dc => AppColors.warning,
       ExamType.pfe => AppColors.purple,
-      _ => AppColors.textSecondary,
+      _ => AppColors.neutral,
     };
 
 const _weekdays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];

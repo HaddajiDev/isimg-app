@@ -164,10 +164,10 @@ void main() {
 
     final names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     final dayLabel = tester.widget<Text>(find.text(names[today - 1]));
-    expect(dayLabel.style?.color, AppColors.textPrimary);
+    expect(dayLabel.style?.color, AppPalette.dark.textPrimary);
 
     final slotStart = tester.widget<Text>(find.text('00:00'));
-    expect(slotStart.style?.color, AppColors.textSecondary);
+    expect(slotStart.style?.color, AppPalette.dark.textSecondary);
   });
 
   test('the demo week covers every day and slot of the timetable', () {

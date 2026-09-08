@@ -19,7 +19,7 @@ Future<ManualNoteResult?> showManualNoteSheet(
 }) {
   return showModalBottomSheet<ManualNoteResult>(
     context: context,
-    backgroundColor: AppColors.surface,
+    backgroundColor: context.c.surface,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
@@ -100,7 +100,7 @@ class _ManualNoteSheetState extends State<_ManualNoteSheet> {
               height: 4,
               width: 40,
               decoration: BoxDecoration(
-                color: AppColors.borderStrong,
+                color: context.c.borderStrong,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
             ),
@@ -110,7 +110,7 @@ class _ManualNoteSheetState extends State<_ManualNoteSheet> {
           const SizedBox(height: AppSpacing.xs),
           Text(
             '${widget.matiere} · ${widget.epreuve}',
-            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
           ),
           const SizedBox(height: AppSpacing.lg),
           TextField(
@@ -123,13 +123,13 @@ class _ManualNoteSheetState extends State<_ManualNoteSheet> {
               fontFamily: mono,
               fontSize: 30,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.c.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: '00.00',
               errorText: _error,
               suffixText: '/ 20',
-              suffixStyle: const TextStyle(color: AppColors.textMuted),
+              suffixStyle: TextStyle(color: context.c.textMuted),
             ),
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
@@ -142,7 +142,7 @@ class _ManualNoteSheetState extends State<_ManualNoteSheet> {
             'Cette note n\'est pas envoyée à l\'ISIMG et sera remplacée '
             'dès que la vraie note sera publiée.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
+              color: context.c.textMuted,
               fontSize: 11.5,
             ),
           ),

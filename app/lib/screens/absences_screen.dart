@@ -46,7 +46,7 @@ class AbsencesScreen extends ConsumerWidget {
             child: RefreshIndicator(
               onRefresh: () => ref.refresh(absencesProvider.future),
               color: AppColors.purple,
-              backgroundColor: AppColors.surfaceRaised,
+              backgroundColor: context.c.surfaceRaised,
               child: _AbsencesContent(absences: view.absences),
             ),
           ),
@@ -171,7 +171,7 @@ class _HeroSummary extends StatelessWidget {
                   clean ? 'Aucune absence' : '$total absence${total > 1 ? 's' : ''}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontFamily: mono,
-                        color: clean ? AppColors.textPrimary : accent,
+                        color: clean ? context.c.textPrimary : accent,
                       ),
                 ),
                 const SizedBox(height: 2),
@@ -180,7 +180,7 @@ class _HeroSummary extends StatelessWidget {
                       ? 'Assiduité parfaite cette année. Continuez !'
                       : 'Sur l\'ensemble de l\'année universitaire.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.c.textSecondary,
                       ),
                 ),
               ],
@@ -200,7 +200,7 @@ class _HeroSummary extends StatelessWidget {
                 ),
                 Text(
                   'taux global',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                 ),
               ],
             ),
@@ -223,12 +223,12 @@ class _ThresholdCaption extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.textMuted),
+        Icon(Icons.info_outline_rounded, size: 14, color: context.c.textMuted),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
             'Seuil d\'élimination — matière ${_fmtPct(matiere)} % · global ${_fmtPct(global)} %',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
           ),
         ),
       ],
@@ -277,7 +277,7 @@ class _SemesterCard extends StatelessWidget {
                 '${semestre.nbreGlobal} abs.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontFamily: mono,
-                      color: semestre.isClean ? AppColors.textMuted : severity,
+                      color: semestre.isClean ? context.c.textMuted : severity,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -297,7 +297,7 @@ class _SemesterCard extends StatelessWidget {
             Text(
               'Par matière',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: context.c.textMuted,
                     letterSpacing: 0.5,
                   ),
             ),
@@ -349,12 +349,12 @@ class _RateBar extends StatelessWidget {
           children: [
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textSecondary),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
               '· seuil ${_fmtPct(threshold)} %',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.c.textMuted),
             ),
             const Spacer(),
             Text(
@@ -377,7 +377,7 @@ class _RateBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                   child: Stack(
                     children: [
-                      Container(height: 8, color: AppColors.surfaceRaised),
+                      Container(height: 8, color: context.c.surfaceRaised),
                       FractionallySizedBox(
                         widthFactor: fraction == 0 ? 0.02 : fraction,
                         child: Container(
@@ -394,7 +394,7 @@ class _RateBar extends StatelessWidget {
 
                 Positioned(
                   left: constraints.maxWidth * markerAt - 1,
-                  child: Container(width: 2, height: 8, color: AppColors.textSecondary),
+                  child: Container(width: 2, height: 8, color: context.c.textSecondary),
                 ),
               ],
             ),
@@ -463,7 +463,7 @@ class _MatiereRow extends StatelessWidget {
                       ? '${matiere.total} absence${matiere.total > 1 ? 's' : ''}'
                       : 'Aucune absence',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: hasAbsences ? AppColors.textSecondary : AppColors.textMuted,
+                        color: hasAbsences ? context.c.textSecondary : context.c.textMuted,
                       ),
                 ),
                 if (active.isNotEmpty) ...[
@@ -489,7 +489,7 @@ class _MatiereRow extends StatelessWidget {
                       Text(
                         'Non éliminé',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textMuted,
+                              color: context.c.textMuted,
                               fontSize: 11,
                             ),
                       ),
@@ -546,7 +546,7 @@ Color _typeColor(String type) {
     case 'tp':
       return AppColors.green;
     default:
-      return AppColors.textSecondary;
+      return AppColors.neutral;
   }
 }
 
