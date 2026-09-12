@@ -16,7 +16,7 @@ bool _isSameDate(DateTime a, DateTime b) =>
   );
 }
 
-class ScheduleGrid extends StatelessWidget {
+class ScheduleGrid extends StatefulWidget {
   final List<Seance> sessions;
 
   final DateTime weekStart;
@@ -27,6 +27,54 @@ class ScheduleGrid extends StatelessWidget {
   static const _dayColumnWidth = 158.0;
   static const _rowHeight = 96.0;
   static const _headerHeight = 52.0;
+
+  @override
+  State<ScheduleGrid> createState() => _ScheduleGridState();
+}
+
+class _ScheduleGridState extends State<ScheduleGrid> {
+  final _dayScroll = ScrollController();
+
+  List<Seance> get sessions => widget.sessions;
+  DateTime get weekStart => widget.weekStart;
+
+  @override
+  void initState() {
+    super.initState();
+    // On launch, glide the day columns over so the current day is in view.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
+  }
+
+  @override
+  void dispose() {
+    _dayScroll.dispose();
+    super.dispose();
+  }
+
+  void _scrollToToday() {
+    if (!_dayScroll.hasClients) return;
+    final today = _todayWeekday(_weekdays);
+    if (today == null) return;
+
+    final position = _dayScroll.position;
+    // Centre today's column in the viewport, clamped to the scrollable range.
+    final target = ((today - 1) * ScheduleGrid._dayColumnWidth) -
+        (position.viewportDimension - ScheduleGrid._dayColumnWidth) / 2;
+    final clamped = target.clamp(0.0, position.maxScrollExtent);
+    if (clamped <= 0) return;
+
+    final reduceMotion = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    if (reduceMotion) {
+      _dayScroll.jumpTo(clamped);
+    } else {
+      _dayScroll.animateTo(
+        clamped,
+        duration: const Duration(milliseconds: 480),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
 
   List<String> get _slots {
     final seen = <String, int>{};
@@ -83,7 +131,7 @@ class ScheduleGrid extends StatelessWidget {
     final todayWeekday = _todayWeekday(weekdays);
     final currentSlot = _currentSlot(slots, todayWeekday);
     final heights = {
-      for (final slot in slots) slot: _rowHeight * _stackDepth(slot),
+      for (final slot in slots) slot: ScheduleGrid._rowHeight * _stackDepth(slot),
     };
 
     return SingleChildScrollView(
@@ -113,6 +161,7 @@ class ScheduleGrid extends StatelessWidget {
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _dayScroll,
                   scrollDirection: Axis.horizontal,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -10,8 +10,8 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.get('/version', (_req, res) =>
   res.json({
-    version: '1.5.0',
-    build: 24,
+    version: '1.6.0',
+    build: 25,
   }),
 );
 

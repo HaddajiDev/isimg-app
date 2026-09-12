@@ -18,10 +18,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _pageController = PageController();
   int _index = 0;
-  bool _drawerOpenedThisDrag = false;
 
   static const _tabs = [
     (title: 'Emploi', subtitle: 'Votre semaine', screen: ScheduleScreen()),
@@ -49,29 +47,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _pageController.jumpToPage(i);
   }
 
-  bool _onScroll(ScrollNotification notification) {
-    if (notification is ScrollStartNotification) {
-      _drawerOpenedThisDrag = false;
-    }
-    // On the first page (Emploi), a right-swipe has no previous page, so it
-    // overscrolls — open the side menu instead.
-    if (_index == 0 &&
-        !_drawerOpenedThisDrag &&
-        notification is OverscrollNotification &&
-        notification.overscroll < 0 &&
-        notification.metrics.axis == Axis.horizontal) {
-      _drawerOpenedThisDrag = true;
-      _scaffoldKey.currentState?.openDrawer();
-    }
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final tab = _tabs[_index];
 
     return Scaffold(
-      key: _scaffoldKey,
       drawer: const AppDrawer(),
       appBar: AppBar(
         titleSpacing: AppSpacing.lg,
@@ -104,14 +84,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           const UpdateBanner(),
           Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _onScroll,
-              child: PageView(
-                controller: _pageController,
-                physics: const ClampingScrollPhysics(),
-                onPageChanged: (i) => setState(() => _index = i),
-                children: [for (final t in _tabs) t.screen],
-              ),
+            child: PageView(
+              controller: _pageController,
+              physics: const ClampingScrollPhysics(),
+              onPageChanged: (i) => setState(() => _index = i),
+              children: [for (final t in _tabs) t.screen],
             ),
           ),
         ],
