@@ -24,6 +24,10 @@ class Seance {
 
   final String slot;
 
+  /// 1-based séance index within the day (matches the timetable/absence
+  /// numbering from the API). 0 when unknown.
+  final int seanceIndex;
+
   final SeanceType type;
   final String matiere;
   final String? enseignant;
@@ -34,6 +38,7 @@ class Seance {
   const Seance({
     required this.weekday,
     required this.slot,
+    this.seanceIndex = 0,
     required this.type,
     required this.matiere,
     this.enseignant,
@@ -50,6 +55,7 @@ class Seance {
   factory Seance.fromJson(Map<String, dynamic> json) => Seance(
         weekday: (json['weekday'] as num?)?.toInt() ?? 1,
         slot: json['slot'] as String? ?? '',
+        seanceIndex: (json['seanceIndex'] as num?)?.toInt() ?? 0,
         type: SeanceType.parse(json['type'] as String?),
         matiere: json['matiere'] as String? ?? '',
         enseignant: json['enseignant'] as String?,
@@ -60,6 +66,7 @@ class Seance {
   Map<String, dynamic> toJson() => {
         'weekday': weekday,
         'slot': slot,
+        'seanceIndex': seanceIndex,
         'type': type.name,
         'matiere': matiere,
         'enseignant': enseignant,

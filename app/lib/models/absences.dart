@@ -173,6 +173,26 @@ class Absences {
   int get totalAbsences =>
       (s1?.nbreGlobal ?? 0) + (s2?.nbreGlobal ?? 0);
 
+  /// A key for one absent class slot: its date plus the 1-based séance index,
+  /// e.g. `2026-9-12#3`. Used to flag the matching cell in the timetable.
+  static String slotKey(DateTime date, int seanceIndex) =>
+      '${date.year}-${date.month}-${date.day}#$seanceIndex';
+
+  /// Every recorded individual absence, keyed the same way, across both
+  /// semesters. Empty when the server returned no per-class list.
+  Set<String> get absentSlots {
+    final keys = <String>{};
+    for (final sem in [s1, s2].whereType<SemestreAbsences>()) {
+      for (final e in sem.entries) {
+        final date = _parseDate(e.date);
+        final seance = int.tryParse(e.seance?.trim() ?? '');
+        if (date != null && seance != null) {
+          keys.add(slotKey(date, seance));
+        }
+      }
+    }
+    return keys;
+  }
   factory Absences.fromJson(Map<String, dynamic> j) => Absences(
         currentSemestre: _int(j['current_semestre']),
         s1: j['bilan_s1'] is Map<String, dynamic>
@@ -192,4 +212,24 @@ class Absences {
         'matiereThreshold': matiereThreshold,
         'globalThreshold': globalThreshold,
       };
+}
+
+/// Parses the API's absence date, tolerating both `yyyy-MM-dd` (with an optional
+/// time) and `dd/MM/yyyy`.
+DateTime? _parseDate(String? raw) {
+  final s = raw?.trim() ?? '';
+  if (s.isEmpty) return null;
+  final iso = DateTime.tryParse(s);
+  if (iso != null) return DateTime(iso.year, iso.month, iso.day);
+  final parts = s.split(RegExp(r'[/\-.]'));
+  if (parts.length == 3) {
+    final a = int.tryParse(parts[0]);
+    final b = int.tryParse(parts[1]);
+    final c = int.tryParse(parts[2]);
+    if (a != null && b != null && c != null) {
+      // dd/MM/yyyy
+      return DateTime(c, b, a);
+    }
+  }
+  return null;
 }

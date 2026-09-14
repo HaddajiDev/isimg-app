@@ -67,6 +67,7 @@ class Svc5Mapper {
     return Seance(
       weekday: weekday,
       slot: slot,
+      seanceIndex: slotIndex,
       type: type,
       matiere: matiere,
       enseignant: enseignant,

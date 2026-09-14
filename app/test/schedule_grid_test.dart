@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:isimg_app/core/demo_data.dart';
+import 'package:isimg_app/models/absences.dart';
 import 'package:isimg_app/models/schedule.dart';
 import 'package:isimg_app/models/seance.dart';
 import 'package:isimg_app/providers/schedule_provider.dart' show mondayOf;
@@ -168,6 +169,47 @@ void main() {
 
     final slotStart = tester.widget<Text>(find.text('00:00'));
     expect(slotStart.style?.color, AppPalette.dark.textSecondary);
+  });
+
+  testWidgets('flags a class the student was absent from with an ABSENT badge',
+      (tester) async {
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final weekStart = DateTime(2024, 10, 21); // Monday
+    // Absence on Tuesday (weekStart + 1), séance index 1.
+    final absentKey = Absences.slotKey(weekStart.add(const Duration(days: 1)), 1);
+
+    await tester.pumpWidget(wrap(ScheduleGrid(
+      sessions: const [
+        Seance(weekday: 2, slot: '08:15-09:45', seanceIndex: 1, type: SeanceType.cours, matiere: 'Réseaux'),
+        Seance(weekday: 3, slot: '08:15-09:45', seanceIndex: 1, type: SeanceType.tp, matiere: 'Base de données'),
+      ],
+      weekStart: weekStart,
+      absentKeys: {absentKey},
+    )));
+
+    expect(find.text('ABSENT'), findsOneWidget);
+    expect(find.text('Réseaux'), findsOneWidget);
+    expect(find.text('Base de données'), findsOneWidget);
+  });
+
+  test('absentSlots keys each recorded absence by date and séance', () {
+    final absences = Absences(
+      s1: const SemestreAbsences(
+        semestre: 1,
+        entries: [
+          AbsenceEntry(date: '2026-09-14', seance: '2', module: 'Maths'),
+          AbsenceEntry(date: '15/09/2026', seance: '4', module: 'Réseaux'),
+          AbsenceEntry(date: '', seance: '', module: 'ignored'),
+        ],
+      ),
+    );
+
+    expect(absences.absentSlots, contains(Absences.slotKey(DateTime(2026, 9, 14), 2)));
+    expect(absences.absentSlots, contains(Absences.slotKey(DateTime(2026, 9, 15), 4)));
+    expect(absences.absentSlots, hasLength(2));
   });
 
   test('the demo week covers every day and slot of the timetable', () {

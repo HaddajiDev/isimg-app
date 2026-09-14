@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_exception.dart';
 import '../models/schedule.dart';
+import '../providers/absences_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../theme/app_theme.dart';
@@ -14,6 +15,8 @@ class ScheduleScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(scheduleProvider);
+    final absentKeys =
+        ref.watch(absencesProvider).valueOrNull?.absences.absentSlots ?? const <String>{};
 
     return Column(
       children: [
@@ -52,6 +55,7 @@ class ScheduleScreen extends ConsumerWidget {
               child: _ScheduleContent(
                 schedule: view.schedule,
                 weekStart: ref.watch(selectedWeekProvider),
+                absentKeys: absentKeys,
               ),
             ),
           ),
@@ -96,8 +100,13 @@ class _ScheduleLoadingPlaceholder extends ConsumerWidget {
 class _ScheduleContent extends StatelessWidget {
   final Schedule schedule;
   final DateTime weekStart;
+  final Set<String> absentKeys;
 
-  const _ScheduleContent({required this.schedule, required this.weekStart});
+  const _ScheduleContent({
+    required this.schedule,
+    required this.weekStart,
+    this.absentKeys = const {},
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +128,11 @@ class _ScheduleContent extends StatelessWidget {
     }
 
     if (schedule.sessions.isNotEmpty) {
-      return ScheduleGrid(sessions: schedule.sessions, weekStart: weekStart);
+      return ScheduleGrid(
+        sessions: schedule.sessions,
+        weekStart: weekStart,
+        absentKeys: absentKeys,
+      );
     }
 
     return LayoutBuilder(

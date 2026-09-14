@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/absences.dart';
 import '../models/seance.dart';
 import '../theme/app_theme.dart';
 
@@ -21,7 +22,16 @@ class ScheduleGrid extends StatefulWidget {
 
   final DateTime weekStart;
 
-  const ScheduleGrid({super.key, required this.sessions, required this.weekStart});
+  /// Keys (`Absences.slotKey`) of the classes this student was absent from, so
+  /// the matching cells can be flagged. Empty when unknown.
+  final Set<String> absentKeys;
+
+  const ScheduleGrid({
+    super.key,
+    required this.sessions,
+    required this.weekStart,
+    this.absentKeys = const {},
+  });
 
   static const _slotColumnWidth = 74.0;
   static const _dayColumnWidth = 158.0;
@@ -181,6 +191,8 @@ class _ScheduleGridState extends State<ScheduleGrid> {
                                 isToday: weekday == todayWeekday,
                                 isCurrentSlot: slot == currentSlot,
                                 height: heights[slot]!,
+                                date: weekStart.add(Duration(days: weekday - 1)),
+                                absentKeys: widget.absentKeys,
                               ),
                           ],
                         ),
@@ -328,12 +340,16 @@ class _GridCell extends StatelessWidget {
   final bool isToday;
   final bool isCurrentSlot;
   final double height;
+  final DateTime date;
+  final Set<String> absentKeys;
 
   const _GridCell({
     required this.seances,
     required this.isToday,
     required this.isCurrentSlot,
     required this.height,
+    required this.date,
+    required this.absentKeys,
   });
 
   static Color _tint(SeanceType type) => switch (type) {
@@ -342,6 +358,10 @@ class _GridCell extends StatelessWidget {
         SeanceType.tp => AppColors.info,
         SeanceType.autre => AppColors.neutral,
       };
+
+  bool _isAbsent(Seance seance) =>
+      seance.seanceIndex > 0 &&
+      absentKeys.contains(Absences.slotKey(date, seance.seanceIndex));
 
   @override
   Widget build(BuildContext context) {
@@ -364,7 +384,9 @@ class _GridCell extends StatelessWidget {
               children: [
                 for (final seance in seances)
                   Expanded(
-                    child: _SeanceBlock(seance: seance, tint: _tint(seance.type)),
+                    child: _isAbsent(seance)
+                        ? _SeanceBlock(seance: seance, tint: AppColors.danger, absent: true)
+                        : _SeanceBlock(seance: seance, tint: _tint(seance.type)),
                   ),
               ],
             ),
@@ -375,8 +397,9 @@ class _GridCell extends StatelessWidget {
 class _SeanceBlock extends StatelessWidget {
   final Seance seance;
   final Color tint;
+  final bool absent;
 
-  const _SeanceBlock({required this.seance, required this.tint});
+  const _SeanceBlock({required this.seance, required this.tint, this.absent = false});
 
   @override
   Widget build(BuildContext context) {
@@ -387,14 +410,14 @@ class _SeanceBlock extends StatelessWidget {
       margin: const EdgeInsets.all(3),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
       decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.13),
+        color: tint.withValues(alpha: absent ? 0.16 : 0.13),
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: tint.withValues(alpha: 0.34)),
+        border: Border.all(color: tint.withValues(alpha: absent ? 0.55 : 0.34)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (prefix.isNotEmpty || seance.rattrapage)
+          if (prefix.isNotEmpty || seance.rattrapage || absent)
             Row(
               children: [
                 if (prefix.isNotEmpty)
@@ -407,8 +430,40 @@ class _SeanceBlock extends StatelessWidget {
                       color: tint,
                     ),
                   ),
-                if (seance.rattrapage) ...[
+                if (absent) ...[
                   if (prefix.isNotEmpty) const SizedBox(width: 4),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.event_busy_rounded, size: 9, color: Colors.white),
+                          const SizedBox(width: 2),
+                          Flexible(
+                            child: Text(
+                              'ABSENT',
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.4,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                if (seance.rattrapage) ...[
+                  if (prefix.isNotEmpty || absent) const SizedBox(width: 4),
 
                   Flexible(
                     child: Container(
