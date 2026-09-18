@@ -17,8 +17,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
 
-  bool _rememberMe = false;
-
   @override
   void dispose() {
     _usernameController.dispose();
@@ -125,12 +123,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          _RememberMeToggle(
-                            value: _rememberMe,
-                            onChanged: (value) =>
-                                setState(() => _rememberMe = value),
-                          ),
                           if (authState.errorMessage != null) ...[
                             const SizedBox(height: AppSpacing.md),
                             _ErrorBanner(message: authState.errorMessage!),
@@ -151,7 +143,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           Text(
-                            'Vos identifiants ISIMG ne sont jamais stockés.',
+                            'Vos identifiants sont conservés en sécurité sur cet '
+                            'appareil, pour vous reconnecter automatiquement.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: context.c.textMuted,
@@ -175,63 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
     if (username.isEmpty || password.isEmpty) return;
-    ref
-        .read(authProvider.notifier)
-        .login(username, password, rememberMe: _rememberMe);
-  }
-}
-
-class _RememberMeToggle extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _RememberMeToggle({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onChanged(!value),
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(
-          children: [
-            SizedBox(
-              height: kMinTouchTarget,
-              width: kMinTouchTarget,
-              child: Checkbox(
-                value: value,
-                onChanged: (next) => onChanged(next ?? false),
-                activeColor: AppColors.purple,
-                side: BorderSide(
-                  color: context.c.borderStrong,
-                  width: 1.5,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Rester connecté',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  Text(
-                    'Enregistre vos identifiants sur cet appareil uniquement, '
-                    'pour reconnecter automatiquement.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: context.c.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    ref.read(authProvider.notifier).login(username, password, rememberMe: true);
   }
 }
 

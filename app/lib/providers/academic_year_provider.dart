@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/demo_api_client.dart';
+import '../core/format.dart';
 import '../core/demo_data.dart';
 import '../isimg/svc5_session.dart';
 import 'api_provider.dart';
@@ -31,7 +32,7 @@ final drawerIdentityProvider =
   final session = Svc5Session.tryDecode(await ref.watch(sessionStoreProvider).read());
   if (session == null) return null;
   final name = [session.prenom, session.nom].whereType<String>().join(' ').trim();
-  final subtitle = session.filiere ??
+  final subtitle = cleanFiliere(session.filiere) ??
       (session.niveau != null ? 'Niveau ${session.niveau}' : 'Espace étudiant');
   return (name: name.isEmpty ? 'Étudiant' : name, subtitle: subtitle);
 });

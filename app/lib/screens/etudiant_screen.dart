@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_exception.dart';
+import '../core/format.dart';
 import '../models/student.dart';
 import '../providers/auth_provider.dart';
 import '../providers/student_provider.dart';
@@ -126,7 +127,7 @@ class _StudentContent extends StatelessWidget {
         _Section(
           title: 'Scolarité',
           rows: [
-            _Row(Icons.school_outlined, 'Diplôme', student.diplome),
+            _Row(Icons.school_outlined, 'Diplôme', cleanFiliere(student.diplome)),
             _Row(Icons.stairs_outlined, 'Niveau', student.niveau == null ? null : 'Niveau ${student.niveau}'),
             _Row(Icons.groups_outlined, 'Classe', student.classeName),
             _Row(Icons.group_work_outlined, 'Groupe', student.groupe),

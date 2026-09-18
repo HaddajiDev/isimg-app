@@ -479,22 +479,7 @@ class _MatiereRow extends StatelessWidget {
                   const Spacer(),
 
                 if (matiere.eliminated)
-                  _Tag(label: matiere.elimineLabel ?? 'Éliminé', color: AppColors.danger)
-                else
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.green),
-                      const SizedBox(width: AppSpacing.xs),
-                      Text(
-                        'Non éliminé',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: context.c.textMuted,
-                              fontSize: 11,
-                            ),
-                      ),
-                    ],
-                  ),
+                  _Tag(label: matiere.elimineLabel ?? 'Éliminé', color: AppColors.danger),
               ],
             ),
           ),

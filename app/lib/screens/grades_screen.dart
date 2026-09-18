@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_exception.dart';
+import '../core/format.dart';
 import '../core/moyenne_calculator.dart';
 import '../models/grade_tree.dart';
 import '../models/grades.dart';
@@ -690,10 +691,10 @@ class _SummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          if (grades.filiere != null) ...[
+          if (cleanFiliere(grades.filiere) case final filiere?) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              grades.filiere!,
+              filiere,
               style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
             ),
           ],

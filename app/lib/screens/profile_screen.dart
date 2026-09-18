@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_exception.dart';
+import '../core/format.dart';
 import '../models/profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
@@ -154,10 +155,10 @@ class _IdentityCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.titleLarge,
           ),
-          if (profile.filiere != null) ...[
+          if (cleanFiliere(profile.filiere) case final filiere?) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              profile.filiere!,
+              filiere,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: context.c.textSecondary,
