@@ -193,6 +193,20 @@ class Absences {
     }
     return keys;
   }
+
+  /// Every recorded absence as a date (duplicates kept — one per missed class),
+  /// across both semesters. Feeds the attendance-streak computation.
+  List<DateTime> get absentDates {
+    final out = <DateTime>[];
+    for (final sem in [s1, s2].whereType<SemestreAbsences>()) {
+      for (final e in sem.entries) {
+        final date = _parseDate(e.date);
+        if (date != null) out.add(date);
+      }
+    }
+    return out;
+  }
+
   factory Absences.fromJson(Map<String, dynamic> j) => Absences(
         currentSemestre: _int(j['current_semestre']),
         s1: j['bilan_s1'] is Map<String, dynamic>

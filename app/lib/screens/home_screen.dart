@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/absence_streak_chip.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/update_banner.dart';
 import 'absences_screen.dart';
@@ -70,6 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          if (_index == 1) const AbsenceStreakChip(),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: IconButton(

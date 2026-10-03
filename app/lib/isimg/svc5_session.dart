@@ -46,27 +46,6 @@ class Svc5Session {
     this.niveau,
   });
 
-  Svc5Session copyWith({String? utoken, String? userId}) => Svc5Session(
-        utoken: utoken ?? this.utoken,
-        userId: userId ?? this.userId,
-        nce: nce,
-        classeId: classeId,
-        gid: gid,
-        sexe: sexe,
-        au: au,
-        yearBase: yearBase,
-        tauxElimination: tauxElimination,
-        slots: slots,
-        ramadanSlots: ramadanSlots,
-        ramadanStart: ramadanStart,
-        ramadanEnd: ramadanEnd,
-        prenom: prenom,
-        nom: nom,
-        cin: cin,
-        filiere: filiere,
-        niveau: niveau,
-      );
-
   Map<String, dynamic> toJson() => {
         'v': 5,
         'utoken': utoken,

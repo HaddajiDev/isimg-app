@@ -166,13 +166,15 @@ class Svc5Client implements ApiClient {
     try {
       final raw = await _loginRaw(creds.username, creds.password);
       if (!raw.auth || raw.passwordExpired) return false;
-      final current = Svc5Session.tryDecode(await _sessions.read());
-      if (current == null) {
-        await _bootstrapAndStore(raw.utoken, raw.userId);
-      } else {
-        await _sessions
-            .save(current.copyWith(utoken: raw.utoken, userId: raw.userId).encode());
-      }
+      // Full re-bootstrap, not just a token swap: classeId/gid/au/slots are
+      // captured at login and otherwise never refreshed. A token-only refresh
+      // keeps stale timetable keys, so GetEtuEdT breaks after the server rolls
+      // the académique year or reassigns the student's class/TP group — the
+      // profile and absences keep working (they only need id/nce), which is why
+      // only the Emploi fails until the user logs out and back in. Re-reading
+      // config/profile/annees here lets the first failed schedule query
+      // self-heal without a manual re-login.
+      await _bootstrapAndStore(raw.utoken, raw.userId);
       return true;
     } catch (_) {
       return false;
@@ -274,7 +276,7 @@ class Svc5Client implements ApiClient {
   @override
   Future<Schedule> getSchedule({String? week}) async {
     final session = await _requireSession();
-    final from = (week != null && week.isNotEmpty) ? week : _mondayOfToday();
+    final from = (week != null && week.isNotEmpty) ? week : _mondayToShow();
     final to = _addDays(from, 6);
 
     final cells = await _query(_qGetEtuEdT, {
@@ -491,11 +493,16 @@ class Svc5Client implements ApiClient {
     return (s.isEmpty || s == '0') ? null : s;
   }
 
-  static String _mondayOfToday() {
+  /// The Monday anchoring the default week to display. On Sunday the current
+  /// week is already over (no classes left), so we roll forward to the next
+  /// week's Monday.
+  static String _mondayToShow() {
     final now = DateTime.now();
-    final monday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - DateTime.monday));
-    return _fmt(monday);
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: now.weekday - DateTime.monday));
+    final anchor =
+        now.weekday == DateTime.sunday ? monday.add(const Duration(days: 7)) : monday;
+    return _fmt(anchor);
   }
 
   static String _addDays(String isoDate, int days) {
