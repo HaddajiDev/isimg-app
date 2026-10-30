@@ -15,11 +15,18 @@ final gradesCacheProvider = Provider<GradesCache>((ref) => GradesCache());
 
 String _cacheKey(String? code) => code ?? '_default';
 
-final gradesProvider = FutureProvider.autoDispose<Grades>((ref) async {
-  final auth = ref.watch(authProvider);
-  final au = ref.watch(selectedAuProvider);
-  final ss = ref.watch(selectedSsProvider);
+final gradesProvider = FutureProvider.autoDispose<Grades>((ref) {
+  return _loadGrades(ref, ref.watch(selectedAuProvider), ref.watch(selectedSsProvider));
+});
 
+/// The current year's principal-session relevé, independent of the Notes
+/// screen's year/session picks. The Plan d'études reads its modules from it.
+final currentYearGradesProvider = FutureProvider.autoDispose<Grades>((ref) {
+  return _loadGrades(ref, null, null);
+});
+
+Future<Grades> _loadGrades(Ref ref, String? au, String? ss) async {
+  final auth = ref.watch(authProvider);
   final cache = ref.watch(gradesCacheProvider);
   final cacheAu = _cacheKey(au);
   final cacheSs = _cacheKey(ss);
@@ -45,7 +52,7 @@ final gradesProvider = FutureProvider.autoDispose<Grades>((ref) async {
 
     return cached.grades;
   }
-});
+}
 
 final gradesCachePeekProvider = FutureProvider.autoDispose<CachedGrades?>((ref) {
   final cache = ref.watch(gradesCacheProvider);

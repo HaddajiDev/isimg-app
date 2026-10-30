@@ -1,8 +1,6 @@
 import '../models/absences.dart';
 import '../models/calendar.dart';
 import '../models/exam.dart';
-import '../models/news.dart';
-import '../models/notifications.dart';
 import '../models/stage.dart';
 import '../models/student.dart';
 import '../models/grades.dart';
@@ -43,9 +41,7 @@ abstract interface class ApiClient {
 
   Future<StudentInfo> getStudentDetails();
 
-  Future<NewsFeed> getNews();
 
-  Future<NotifData> getNotifications();
 
   Future<Stages> getStages();
 }

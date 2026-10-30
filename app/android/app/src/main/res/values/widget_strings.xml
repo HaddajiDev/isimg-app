@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_label">Cours du jour</string>
+    <string name="widget_today_description">Vos cours d\'aujourd\'hui, d\'un coup d\'œil.</string>
+    <string name="widget_today_title">Aujourd\'hui</string>
+    <string name="widget_today_loading">Ouvrez l\'application pour charger votre emploi</string>
+</resources>

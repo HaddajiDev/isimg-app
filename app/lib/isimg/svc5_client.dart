@@ -5,12 +5,13 @@ import 'package:dio/dio.dart';
 import '../core/api_client.dart';
 import '../core/api_exception.dart';
 import '../core/credential_store.dart';
+import '../core/services_api.dart';
 import '../core/session_store.dart';
 import '../models/absences.dart';
 import '../models/calendar.dart';
+import '../models/demande.dart';
 import '../models/exam.dart';
-import '../models/news.dart';
-import '../models/notifications.dart';
+import '../models/pfe.dart';
 import '../models/stage.dart';
 import '../models/student.dart';
 import '../models/grades.dart';
@@ -20,7 +21,7 @@ import 'svc5_crypto.dart';
 import 'svc5_mapper.dart';
 import 'svc5_session.dart';
 
-class Svc5Client implements ApiClient {
+class Svc5Client implements ApiClient, ServicesApi {
   static const _base = 'https://isimg.rnu.tn/svc5/';
   static const _sqlToken =
       'fAKs3F5SG4wlaOZkrmHe6JvVDyNqgth2T9CcYE01L7xPXIQnb8pRjdWUMzoBui';
@@ -33,16 +34,20 @@ class Svc5Client implements ApiClient {
   static const _qLoadAnneesUniv = 2;
   static const _qGetEtuEdT = 8;
   static const _qGetCalUniv = 4;
-  static const _qGetNews = 5;
   static const _qGetStage = 38;
-  static const _qGetNotifs = 68;
   static const _qGetProfileEtu = 9;
   static const _qGetReleveNotes = 65;
   static const _qGetAbsencesEtu = 66;
   static const _qGetNextExams = 69;
+  static const _qGetMessagesDemande = 25;
+  static const _qGetDemandes = 26;
+  static const _qGetModelDemandes = 27;
+  static const _qUpdateDateViewDemande = 28;
+  static const _qGetPfe = 39;
+  static const _qAddDemande = 60;
+  static const _qDelDemande = 61;
+  static const _qAddDemandeMessage = 62;
 
-  static const _newsCount = '30';
-  static const _maxNotifs = '30';
 
   final Dio _dio;
   final SessionStore _sessions;
@@ -339,38 +344,6 @@ class Svc5Client implements ApiClient {
   }
 
   @override
-  Future<NewsFeed> getNews() async {
-    final session = await _requireSession();
-    final rows = await _query(_qGetNews, {
-      'user_type': '1',
-      'user_id': session.userId,
-      'nbre': _newsCount,
-      'sdate': _now(),
-      'groupe_id': session.gid,
-      'classe_id': session.classeId,
-    });
-    final items = rows.whereType<Map<String, dynamic>>().map(NewsItem.fromJson).toList()
-      ..sort((a, b) =>
-          (b.created ?? DateTime(0)).compareTo(a.created ?? DateTime(0)));
-    return NewsFeed(items: items);
-  }
-
-  @override
-  Future<NotifData> getNotifications() async {
-    final session = await _requireSession();
-    final record = _first(await _query(_qGetNotifs, {
-      'id': session.userId,
-      'date_limite_news': _epoch(),
-      'date_limite_demandes': _epoch(),
-      'date_limite_absences': _epoch(),
-      'au': '${session.au}',
-      'MaxPostsNotifs': _maxNotifs,
-    }));
-    if (record == null) return const NotifData();
-    return NotifData.fromJson(record);
-  }
-
-  @override
   Future<Stages> getStages() async {
     final session = await _requireSession();
     final results = await Future.wait(StageType.values.map((type) async {
@@ -385,6 +358,106 @@ class Svc5Client implements ApiClient {
       }
     }));
     return Stages(stages: results.whereType<Stage>().toList());
+  }
+
+  @override
+  Future<List<DemandeModel>> getDemandeModels() async {
+    final rows = await _query(_qGetModelDemandes, const {});
+    return rows.whereType<Map<String, dynamic>>().map(DemandeModel.fromJson).toList();
+  }
+
+  @override
+  Future<List<Demande>> getDemandes() async {
+    final session = await _requireSession();
+    final rows = await _query(_qGetDemandes, {'user_id': session.userId});
+    return rows.whereType<Map<String, dynamic>>().map(Demande.fromJson).toList()
+      ..sort((a, b) => (b.created ?? DateTime(0)).compareTo(a.created ?? DateTime(0)));
+  }
+
+  @override
+  Future<List<DemandeMessage>> getDemandeMessages(String demandeId) async {
+    final rows = await _query(_qGetMessagesDemande, {'id': demandeId});
+    return rows.whereType<Map<String, dynamic>>().map(DemandeMessage.fromJson).toList();
+  }
+
+  /// Mirrors the official submit: the form becomes a JSON array of
+  /// `{label, value, file}` in `content`, wrapped in a serialized `Demande`.
+  @override
+  Future<void> addDemande(DemandeModel model, Map<String, String> values) async {
+    final session = await _requireSession();
+    final content = jsonEncode([
+      for (final f in model.fields)
+        {'label': f.label, 'value': values[f.id] ?? '', 'file': false},
+    ]);
+    const never = '0001-01-01T00:00:00';
+    final demande = {
+      'id': '99999',
+      'modele_id': model.id,
+      'modele_name': model.name,
+      'user_id': session.userId,
+      'user_type': 'ETU',
+      'content': content,
+      'flds': null,
+      'file_str': null,
+      'statut': 0,
+      'created': _netDateTime(DateTime.now()),
+      'updated': never,
+      'owner_last_visit': never,
+      'files': const [],
+      'Fichiers': null,
+      'Conversations': const [],
+      'LastMsgFromGestDate': never,
+      'htmlContent': null,
+      'format': 2,
+    };
+    _expectOk(await _query(_qAddDemande, {'demande': jsonEncode(demande)}));
+  }
+
+  @override
+  Future<void> deleteDemande(String demandeId) async {
+    _expectOk(await _query(_qDelDemande, {'demande_id': demandeId}));
+  }
+
+  @override
+  Future<void> addDemandeMessage(String demandeId, String message) async {
+    _expectOk(await _query(_qAddDemandeMessage, {
+      'demande_id': demandeId,
+      'who': 'me',
+      // The official app doubles single quotes before sending (wString).
+      'message': message.replaceAll("'", "''"),
+    }));
+  }
+
+  @override
+  Future<void> markDemandeSeen(String demandeId) async {
+    await _query(_qUpdateDateViewDemande, {'demande_id': demandeId});
+  }
+
+  @override
+  Future<Pfe?> getPfe() async {
+    final session = await _requireSession();
+    final prof = _first(await _query(_qGetProfileEtu, {'id': session.userId}));
+    final pfeId = prof?['pfe_code']?.toString().trim() ?? '';
+    if (pfeId.isEmpty || pfeId == '0') return null;
+    final rec = _first(await _query(_qGetPfe, {'pfe_id': pfeId, 'nce': session.nce}));
+    return rec == null ? null : Pfe.fromJson(rec);
+  }
+
+  /// Write endpoints answer `[{"reponse":"1"}]` on success.
+  static void _expectOk(List<dynamic> rows) {
+    final ok = _first(rows)?['reponse']?.toString() == '1';
+    if (!ok) throw ApiException('request_rejected');
+  }
+
+  /// A local timestamp the way Json.NET serializes `DateTime.Now`
+  /// (`2026-10-30T14:05:00.1234567+01:00`).
+  static String _netDateTime(DateTime d) {
+    final off = d.timeZoneOffset;
+    final sign = off.isNegative ? '-' : '+';
+    final h = off.inHours.abs().toString().padLeft(2, '0');
+    final m = (off.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    final frac = (d.microsecond + d.millisecond * 1000).toString().padLeft(6, '0');
+    return '${_dateTime(d).replaceFirst(' ', 'T')}.${frac}0$sign$h:$m';
   }
 
   Future<List<dynamic>?> _findEpreuveTemplate(Svc5Session session) async {
@@ -517,9 +590,7 @@ class Svc5Client implements ApiClient {
   static String _dateTime(DateTime d) =>
       '${_fmt(d)} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}:${d.second.toString().padLeft(2, '0')}';
 
-  static String _now() => _dateTime(DateTime.now());
 
-  static String _epoch() => '2000-01-01 00:00:00';
 }
 
 class _LoginRaw {

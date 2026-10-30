@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_exception.dart';
+import '../core/home_widget_sync.dart';
 import '../core/schedule_cache.dart';
 import '../models/schedule.dart';
 import 'api_provider.dart';
@@ -13,6 +14,13 @@ DateTime mondayOf(DateTime date) {
   return DateTime(date.year, date.month, date.day).subtract(Duration(days: daysSinceMonday));
 }
 
+/// The week the timetable should open on for [date]. On Sunday the current
+/// week has no classes left, so it moves on to the next one.
+DateTime displayWeekOf(DateTime date) {
+  final monday = mondayOf(date);
+  return date.weekday == DateTime.sunday ? monday.add(const Duration(days: 7)) : monday;
+}
+
 String formatWeek(DateTime date) {
   final y = date.year.toString().padLeft(4, '0');
   final m = date.month.toString().padLeft(2, '0');
@@ -20,7 +28,7 @@ String formatWeek(DateTime date) {
   return '$y-$m-$d';
 }
 
-final selectedWeekProvider = StateProvider<DateTime>((ref) => mondayOf(DateTime.now()));
+final selectedWeekProvider = StateProvider<DateTime>((ref) => displayWeekOf(DateTime.now()));
 
 final scheduleCacheProvider = Provider<ScheduleCache>((ref) => ScheduleCache());
 
@@ -54,6 +62,10 @@ final scheduleProvider = FutureProvider.autoDispose<ScheduleView>((ref) async {
   try {
     final schedule = await ref.watch(apiClientProvider).getSchedule(week: week);
     await cache.save(week, schedule);
+    // The home-screen widget mirrors the week the app opens on.
+    if (weekStart == displayWeekOf(DateTime.now())) {
+      unawaited(HomeWidgetSync.publish(schedule, weekStart));
+    }
     return ScheduleView(schedule: schedule);
   } on ApiException catch (error) {
     if (!error.isConnectivityProblem) rethrow;
@@ -79,7 +91,7 @@ void goToNextWeek(WidgetRef ref) {
 }
 
 void goToCurrentWeek(WidgetRef ref) {
-  ref.read(selectedWeekProvider.notifier).state = mondayOf(DateTime.now());
+  ref.read(selectedWeekProvider.notifier).state = displayWeekOf(DateTime.now());
 }
 
 void goToWeekOf(WidgetRef ref, DateTime date) {

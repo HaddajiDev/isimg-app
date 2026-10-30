@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget palette (dark). Mirrors AppPalette.dark. -->
+<resources>
+    <color name="widget_bg">#FF12101A</color>
+    <color name="widget_border">#FF262233</color>
+    <color name="widget_text">#FFF4F2FA</color>
+    <color name="widget_text_secondary">#FFA9A3BF</color>
+    <color name="widget_muted">#FF6F6885</color>
+    <color name="widget_accent">#FF9B85FF</color>
+    <color name="widget_accent_soft">#339B85FF</color>
+</resources>

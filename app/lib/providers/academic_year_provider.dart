@@ -7,7 +7,10 @@ import '../isimg/svc5_session.dart';
 import 'api_provider.dart';
 import 'auth_provider.dart';
 
-final academicYearProvider = FutureProvider.autoDispose<String?>((ref) async {
+// Not autoDispose: the drawer is torn down on every close, and re-resolving
+// these on each open made the slide-in animation stutter. Both still refresh
+// on any auth change.
+final academicYearProvider = FutureProvider<String?>((ref) async {
   ref.watch(authProvider);
 
   final client = ref.watch(apiClientProvider);
@@ -21,7 +24,7 @@ final academicYearProvider = FutureProvider.autoDispose<String?>((ref) async {
 });
 
 final drawerIdentityProvider =
-    FutureProvider.autoDispose<({String name, String subtitle})?>((ref) async {
+    FutureProvider<({String name, String subtitle})?>((ref) async {
   ref.watch(authProvider);
 
   final client = ref.watch(apiClientProvider);

@@ -9,8 +9,6 @@ import 'package:isimg_app/core/exams_cache.dart';
 import 'package:isimg_app/models/absences.dart';
 import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/calendar.dart';
-import 'package:isimg_app/models/news.dart';
-import 'package:isimg_app/models/notifications.dart';
 import 'package:isimg_app/models/stage.dart';
 import 'package:isimg_app/models/student.dart';
 import 'package:isimg_app/models/grades.dart';
@@ -36,11 +34,7 @@ class FlakyApi implements ApiClient {
   @override
   Future<StudentInfo> getStudentDetails() => throw UnimplementedError();
 
-  @override
-  Future<NewsFeed> getNews() => throw UnimplementedError();
 
-  @override
-  Future<NotifData> getNotifications() => throw UnimplementedError();
 
   @override
   Future<Stages> getStages() => throw UnimplementedError();

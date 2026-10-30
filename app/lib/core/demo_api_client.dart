@@ -1,19 +1,28 @@
 import 'api_client.dart';
+import 'api_exception.dart';
 import 'demo_data.dart';
+import 'services_api.dart';
+import '../models/demande.dart';
+import '../models/pfe.dart';
 import '../models/absences.dart';
 import '../models/calendar.dart';
 import '../models/exam.dart';
-import '../models/news.dart';
-import '../models/notifications.dart';
 import '../models/stage.dart';
 import '../models/student.dart';
 import '../models/grades.dart';
 import '../models/profile.dart';
 import '../models/schedule.dart';
 
-class DemoAwareApiClient implements ApiClient {
+class DemoAwareApiClient implements ApiClient, ServicesApi {
   final ApiClient _delegate;
   bool _demoSession = false;
+  final _demoDemandes = <Demande>[];
+
+  ServicesApi get _services {
+    final d = _delegate;
+    if (d is ServicesApi) return d as ServicesApi;
+    throw ApiException('unsupported');
+  }
 
   DemoAwareApiClient(this._delegate);
 
@@ -81,20 +90,67 @@ class DemoAwareApiClient implements ApiClient {
   }
 
   @override
-  Future<NewsFeed> getNews() {
-    if (_demoSession) return Future.value(demoNews());
-    return _delegate.getNews();
-  }
-
-  @override
-  Future<NotifData> getNotifications() {
-    if (_demoSession) return Future.value(demoNotifications());
-    return _delegate.getNotifications();
-  }
-
-  @override
   Future<Stages> getStages() {
     if (_demoSession) return Future.value(demoStages());
     return _delegate.getStages();
+  }
+
+  @override
+  Future<List<DemandeModel>> getDemandeModels() async {
+    if (_demoSession) return demoDemandeModels();
+    return _services.getDemandeModels();
+  }
+
+  @override
+  Future<List<Demande>> getDemandes() async {
+    if (_demoSession) return List.of(_demoDemandes);
+    return _services.getDemandes();
+  }
+
+  @override
+  Future<List<DemandeMessage>> getDemandeMessages(String demandeId) async {
+    if (_demoSession) return const [];
+    return _services.getDemandeMessages(demandeId);
+  }
+
+  @override
+  Future<void> addDemande(DemandeModel model, Map<String, String> values) async {
+    if (!_demoSession) return _services.addDemande(model, values);
+    _demoDemandes.insert(
+      0,
+      Demande(
+        id: 'demo-${_demoDemandes.length + 1}',
+        modeleId: model.id,
+        name: model.name,
+        statut: DemandeStatut.enCours,
+        values: [
+          for (final f in model.fields)
+            if ((values[f.id] ?? '').isNotEmpty) DemandeValue(label: f.label, value: values[f.id]!),
+        ],
+        created: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteDemande(String demandeId) async {
+    if (!_demoSession) return _services.deleteDemande(demandeId);
+    _demoDemandes.removeWhere((d) => d.id == demandeId);
+  }
+
+  @override
+  Future<void> addDemandeMessage(String demandeId, String message) async {
+    if (!_demoSession) return _services.addDemandeMessage(demandeId, message);
+  }
+
+  @override
+  Future<void> markDemandeSeen(String demandeId) async {
+    if (!_demoSession) return _services.markDemandeSeen(demandeId);
+  }
+
+  @override
+  Future<Pfe?> getPfe() async {
+    if (_demoSession) return null;
+    return _services.getPfe();
   }
 }

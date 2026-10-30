@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/academic_year_provider.dart';
-import '../providers/notifications_provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/calendar_screen.dart';
+import '../screens/demandes_screen.dart';
 import '../screens/etudiant_screen.dart';
-import '../screens/news_screen.dart';
-import '../screens/notifications_screen.dart';
+import '../screens/pfe_screen.dart';
+import '../screens/plan_etudes_screen.dart';
 import '../screens/stage_screen.dart';
 import '../theme/app_theme.dart';
 import 'student_avatar.dart';
@@ -63,43 +63,56 @@ class AppDrawer extends ConsumerWidget {
               ),
             ),
             const Divider(),
-            const SizedBox(height: AppSpacing.xs),
-            _DrawerButton(
-              icon: Icons.campaign_outlined,
-              label: 'Actualités',
-              value: 'Annonces de l\'établissement',
-              onTap: () => _go(context, const NewsScreen()),
-            ),
-            _DrawerButton(
-              icon: Icons.notifications_none_rounded,
-              label: 'Notifications',
-              value: _notifSubtitle(ref),
-              badge: ref.watch(notificationsProvider).valueOrNull?.total,
-              onTap: () => _go(context, const NotificationsScreen()),
-            ),
-            _DrawerButton(
-              icon: Icons.person_outline_rounded,
-              label: 'Étudiant',
-              value: 'Fiche personnelle',
-              onTap: () => _go(context, const EtudiantScreen()),
-            ),
-            _DrawerButton(
-              icon: Icons.work_outline_rounded,
-              label: 'Stages',
-              value: 'Ouvrier · technicien · ingénieur',
-              onTap: () => _go(context, const StageScreen()),
-            ),
-            _DrawerButton(
-              icon: Icons.event_note_rounded,
-              label: 'Année universitaire',
-              value: year.when(
-                data: (y) => y ?? 'Calendrier',
-                loading: () => '…',
-                error: (_, _) => 'Calendrier',
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                children: [
+                  const _DrawerSection('Scolarité'),
+                  _DrawerButton(
+                    icon: Icons.person_outline_rounded,
+                    label: 'Étudiant',
+                    value: 'Fiche personnelle',
+                    onTap: () => _go(context, const EtudiantScreen()),
+                  ),
+                  _DrawerButton(
+                    icon: Icons.menu_book_outlined,
+                    label: "Plan d'études",
+                    value: 'Modules, coefficients, crédits',
+                    onTap: () => _go(context, const PlanEtudesScreen()),
+                  ),
+                  _DrawerButton(
+                    icon: Icons.event_note_rounded,
+                    label: 'Année universitaire',
+                    value: year.when(
+                      data: (y) => y ?? 'Calendrier',
+                      loading: () => '…',
+                      error: (_, _) => 'Calendrier',
+                    ),
+                    onTap: () => _go(context, const CalendarScreen()),
+                  ),
+                  const _DrawerSection('Projets & démarches'),
+                  _DrawerButton(
+                    icon: Icons.work_outline_rounded,
+                    label: 'Stages',
+                    value: 'Ouvrier · technicien · ingénieur',
+                    onTap: () => _go(context, const StageScreen()),
+                  ),
+                  _DrawerButton(
+                    icon: Icons.school_outlined,
+                    label: 'PFE',
+                    value: "Projet de fin d'études",
+                    onTap: () => _go(context, const PfeScreen()),
+                  ),
+                  _DrawerButton(
+                    icon: Icons.description_outlined,
+                    label: 'Demandes administratives',
+                    value: 'Attestations et documents',
+                    onTap: () => _go(context, const DemandesScreen()),
+                  ),
+                ],
               ),
-              onTap: () => _go(context, const CalendarScreen()),
             ),
-            const Spacer(),
+            const Divider(height: 1),
             const _ThemeToggle(),
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.lg),
@@ -117,12 +130,6 @@ class AppDrawer extends ConsumerWidget {
   void _go(BuildContext context, Widget page) {
     Navigator.pop(context);
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-  }
-
-  String _notifSubtitle(WidgetRef ref) {
-    final total = ref.watch(notificationsProvider).valueOrNull?.total;
-    if (total == null || total == 0) return 'Vous êtes à jour';
-    return total > 1 ? '$total nouveautés' : '1 nouveauté';
   }
 
   static String _initials(String name) {
@@ -206,14 +213,12 @@ class _DrawerButton extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
-  final int? badge;
 
   const _DrawerButton({
     required this.icon,
     required this.label,
     required this.value,
     required this.onTap,
-    this.badge,
   });
 
   @override
@@ -257,25 +262,6 @@ class _DrawerButton extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (badge != null && badge! > 0) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    constraints: const BoxConstraints(minWidth: 22),
-                    decoration: BoxDecoration(
-                      color: AppColors.purple,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      '${badge! > 99 ? '99+' : badge}',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
                 Icon(Icons.chevron_right_rounded, color: context.c.textMuted),
               ],
             ),
@@ -284,4 +270,23 @@ class _DrawerButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DrawerSection extends StatelessWidget {
+  final String label;
+
+  const _DrawerSection(this.label);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xs),
+        child: Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: context.c.textMuted,
+                letterSpacing: 0.8,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      );
 }

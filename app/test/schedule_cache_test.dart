@@ -6,8 +6,6 @@ import 'package:isimg_app/core/api_client.dart';
 import 'package:isimg_app/models/absences.dart';
 import 'package:isimg_app/models/exam.dart';
 import 'package:isimg_app/models/calendar.dart';
-import 'package:isimg_app/models/news.dart';
-import 'package:isimg_app/models/notifications.dart';
 import 'package:isimg_app/models/stage.dart';
 import 'package:isimg_app/models/student.dart';
 import 'package:isimg_app/core/api_exception.dart';
@@ -23,11 +21,7 @@ class FlakyApi implements ApiClient {
   @override
   Future<StudentInfo> getStudentDetails() => throw UnimplementedError();
 
-  @override
-  Future<NewsFeed> getNews() => throw UnimplementedError();
 
-  @override
-  Future<NotifData> getNotifications() => throw UnimplementedError();
 
   @override
   Future<Stages> getStages() => throw UnimplementedError();
@@ -130,7 +124,7 @@ void main() {
       expect(view.isFromCache, isFalse);
       expect(view.schedule.weekLabel, 'semaine en ligne');
 
-      final week = formatWeek(mondayOf(DateTime.now()));
+      final week = formatWeek(displayWeekOf(DateTime.now()));
       expect(await ScheduleCache().read(week), isNotNull);
     });
 
@@ -207,6 +201,13 @@ void main() {
       expect(mondayOf(DateTime(2026, 8, 3)), DateTime(2026, 8, 3));
 
       expect(mondayOf(DateTime(2026, 8, 9)), DateTime(2026, 8, 3));
+    });
+
+    test('the timetable opens on next week on Sunday only', () {
+      // Sat 8 Aug → this week; Sun 9 Aug → next week (Mon 10 Aug).
+      expect(displayWeekOf(DateTime(2026, 8, 8)), DateTime(2026, 8, 3));
+      expect(displayWeekOf(DateTime(2026, 8, 9)), DateTime(2026, 8, 10));
+      expect(displayWeekOf(DateTime(2026, 8, 3)), DateTime(2026, 8, 3));
     });
 
     test('the week key is the Monday in ISO form', () {

@@ -6,8 +6,6 @@ import '../core/session_store.dart';
 import '../models/absences.dart';
 import '../models/calendar.dart';
 import '../models/exam.dart';
-import '../models/news.dart';
-import '../models/notifications.dart';
 import '../models/stage.dart';
 import '../models/student.dart';
 import '../models/grades.dart';
@@ -250,11 +248,7 @@ class IsimgClient implements ApiClient {
   @override
   Future<StudentInfo> getStudentDetails() async => throw ApiException('unsupported');
 
-  @override
-  Future<NewsFeed> getNews() async => throw ApiException('unsupported');
 
-  @override
-  Future<NotifData> getNotifications() async => throw ApiException('unsupported');
 
   @override
   Future<Stages> getStages() async => throw ApiException('unsupported');

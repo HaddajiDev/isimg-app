@@ -209,7 +209,7 @@ class _WeekNavigator extends ConsumerWidget {
       data: (view) => view.schedule.weekLabel,
       orElse: () => null,
     );
-    final isCurrentWeek = selectedWeek == mondayOf(DateTime.now());
+    final isCurrentWeek = selectedWeek == displayWeekOf(DateTime.now());
 
     return Container(
       margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
