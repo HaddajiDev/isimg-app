@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_exception.dart';
+import '../core/format.dart';
 import '../models/absences.dart';
 import '../providers/absences_provider.dart';
 import '../providers/auth_provider.dart';
@@ -84,7 +85,11 @@ class _AbsencesContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semesters = absences.semesters;
+    // The current semester first, the others after in their usual order.
+    final semesters = [
+      ...absences.semesters.where((s) => s.semestre == absences.currentSemestre),
+      ...absences.semesters.where((s) => s.semestre != absences.currentSemestre),
+    ];
 
     if (semesters.isEmpty) {
       return _scrollableEmpty(
@@ -104,6 +109,10 @@ class _AbsencesContent extends StatelessWidget {
         _ThresholdCaption(matiere: absences.matiereThreshold, global: absences.globalThreshold),
         const SizedBox(height: AppSpacing.lg),
         for (final sem in semesters) ...[
+          if (sem.entries.isNotEmpty) ...[
+            _AbsenceHistory(key: ValueKey('history-${sem.semestre}'), semestre: sem),
+            const SizedBox(height: AppSpacing.md),
+          ],
           _SemesterCard(
             semestre: sem,
             isCurrent: sem.semestre == absences.currentSemestre,
@@ -495,6 +504,146 @@ class _MatiereRow extends StatelessWidget {
     if ((m.taux ?? 0) >= threshold * 0.5) return AppColors.warning;
     if (m.total == 0) return AppColors.green;
     return AppColors.info;
+  }
+}
+
+/// Every recorded absence of a semester, newest day first, grouped by day.
+/// Collapsed by default; the header toggles it.
+class _AbsenceHistory extends StatefulWidget {
+  final SemestreAbsences semestre;
+
+  const _AbsenceHistory({super.key, required this.semestre});
+
+  @override
+  State<_AbsenceHistory> createState() => _AbsenceHistoryState();
+}
+
+class _AbsenceHistoryState extends State<_AbsenceHistory> {
+  static const _jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+  bool _open = false;
+
+  SemestreAbsences get semestre => widget.semestre;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+
+    final byDay = <DateTime?, List<AbsenceEntry>>{};
+    for (final e in semestre.entries) {
+      byDay.putIfAbsent(e.day, () => []).add(e);
+    }
+    // Newest first; an unreadable date sinks to the bottom.
+    final days = byDay.keys.toList()
+      ..sort((a, b) {
+        if (a == null || b == null) return a == null ? (b == null ? 0 : 1) : -1;
+        return b.compareTo(a);
+      });
+    for (final list in byDay.values) {
+      list.sort((a, b) => (int.tryParse(a.seance ?? '') ?? 0).compareTo(int.tryParse(b.seance ?? '') ?? 0));
+    }
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            onTap: () => setState(() => _open = !_open),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  Icon(Icons.event_busy_outlined, size: 20, color: context.c.textMuted),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Text('Liste des absences · S${semestre.semestre}', style: text.titleMedium)),
+                  Text(
+                    '${semestre.entries.length}',
+                    style: text.bodyMedium?.copyWith(color: context.c.textMuted, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  AnimatedRotation(
+                    turns: _open ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(Icons.expand_more_rounded, color: context.c.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: !_open
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final day in days) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            day == null ? 'Date inconnue' : '${_jours[day.weekday - 1]} ${frDate(day)}',
+                            style: text.bodySmall?.copyWith(color: context.c.textMuted, letterSpacing: 0.3),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          for (final e in byDay[day]!) _AbsenceRow(entry: e),
+                        ],
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AbsenceRow extends StatelessWidget {
+  final AbsenceEntry entry;
+
+  const _AbsenceRow({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final color = _typeColor(entry.type ?? '');
+    final details = [
+      if (entry.seance != null) 'Séance ${entry.seance}',
+      if (entry.enseignant != null) entry.enseignant!,
+    ].join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 34,
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.module ?? 'Matière inconnue',
+                  style: text.bodyMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (details.isNotEmpty) Text(details, style: text.bodySmall?.copyWith(color: context.c.textMuted)),
+              ],
+            ),
+          ),
+          if (entry.type != null) ...[const SizedBox(width: AppSpacing.sm), _Tag(label: entry.type!, color: color)],
+        ],
+      ),
+    );
   }
 }
 

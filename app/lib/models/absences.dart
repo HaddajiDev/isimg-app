@@ -78,6 +78,9 @@ class AbsenceEntry {
 
   const AbsenceEntry({this.date, this.seance, this.type, this.enseignant, this.module});
 
+  /// [date] as a calendar day, or null when it can't be read.
+  DateTime? get day => _parseDate(date);
+
   factory AbsenceEntry.fromJson(Map<String, dynamic> j) => AbsenceEntry(
         date: _str(j['date']),
         seance: _str(j['seance']),
@@ -184,7 +187,7 @@ class Absences {
     final keys = <String>{};
     for (final sem in [s1, s2].whereType<SemestreAbsences>()) {
       for (final e in sem.entries) {
-        final date = _parseDate(e.date);
+        final date = e.day;
         final seance = int.tryParse(e.seance?.trim() ?? '');
         if (date != null && seance != null) {
           keys.add(slotKey(date, seance));
@@ -200,7 +203,7 @@ class Absences {
     final out = <DateTime>[];
     for (final sem in [s1, s2].whereType<SemestreAbsences>()) {
       for (final e in sem.entries) {
-        final date = _parseDate(e.date);
+        final date = e.day;
         if (date != null) out.add(date);
       }
     }
