@@ -115,7 +115,7 @@ void main() {
       expect(pending.source, AverageSource.partial);
     });
 
-    test('refuses to guess once a rattrapage épreuve appears', () {
+    test('computes the base session and ignores the rattrapage épreuve', () {
       final result = calc.matiereAverage(
         matiere(
           epreuves: const [
@@ -125,7 +125,23 @@ void main() {
           ],
         ),
       );
-      expect(result.hasValue, isFalse);
+      // Base = DS·0.3 + Ex·0.7 = 6.5; the REX is left out entirely.
+      expect(result.value, closeTo(6.5, 0.001));
+      expect(result.source, AverageSource.computed);
+    });
+
+    test('a single base note computes even next to a rattrapage épreuve', () {
+      final result = calc.matiereAverage(
+        matiere(
+          epreuves: const [
+            Epreuve(libelle: 'DS (0.3)', poids: 0.3, note: 12),
+            Epreuve(libelle: 'Ex (0.7)', poids: 0.7),
+            Epreuve(libelle: 'Rex (0.7)', poids: 0.7),
+          ],
+        ),
+      );
+      expect(result.value, closeTo(12, 0.001));
+      expect(result.source, AverageSource.partial);
     });
   });
 

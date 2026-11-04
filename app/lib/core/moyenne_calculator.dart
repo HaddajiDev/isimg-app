@@ -38,9 +38,12 @@ class MoyenneCalculator {
       return Average(matiere.moyenne, AverageSource.official);
     }
 
-    if (matiere.epreuves.any((e) => e.isRattrapage)) return Average.none;
+    // Base (session principale) average: rattrapage (REX) épreuves are left out.
+    // The post-rattrapage rule isn't published, so we only project the base
+    // session — a REX chip must not stop the matière from computing.
+    final base = matiere.epreuves.where((e) => !e.isRattrapage).toList();
 
-    final weighted = matiere.epreuves.where((e) => e.hasNote && (e.poids ?? 0) > 0);
+    final weighted = base.where((e) => e.hasNote && (e.poids ?? 0) > 0);
     if (weighted.isEmpty) return Average.none;
 
     var total = 0.0;
@@ -53,7 +56,7 @@ class MoyenneCalculator {
     }
     if (weight <= 0) return Average.none;
 
-    final expected = matiere.epreuves
+    final expected = base
         .where((e) => (e.poids ?? 0) > 0)
         .fold<double>(0, (sum, e) => sum + e.poids!);
     final isComplete = (expected - weight).abs() < 0.001;
