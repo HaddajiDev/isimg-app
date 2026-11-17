@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/schedule_layout_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/absence_streak_chip.dart';
 import '../widgets/app_drawer.dart';
@@ -71,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          if (_index == 0) const _ScheduleLayoutToggle(),
           if (_index == 1) const AbsenceStreakChip(),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
@@ -142,5 +144,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (shouldLogout == true) {
       await ref.read(authProvider.notifier).logout();
     }
+  }
+}
+
+/// Switches the Emploi tab between the one-screen week and the wide columns.
+class _ScheduleLayoutToggle extends ConsumerWidget {
+  const _ScheduleLayoutToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final compact = ref.watch(scheduleLayoutProvider) == ScheduleLayout.compact;
+    return IconButton(
+      onPressed: () => ref.read(scheduleLayoutProvider.notifier).toggle(),
+      icon: Icon(compact ? Icons.view_column_rounded : Icons.grid_on_rounded),
+      tooltip: compact ? 'Affichage détaillé' : 'Semaine sur un écran',
+    );
   }
 }

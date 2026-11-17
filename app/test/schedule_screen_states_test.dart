@@ -21,6 +21,7 @@ import 'package:isimg_app/providers/api_provider.dart';
 import 'package:isimg_app/providers/auth_provider.dart';
 import 'package:isimg_app/screens/schedule_screen.dart';
 import 'package:isimg_app/theme/app_theme.dart';
+import 'package:isimg_app/widgets/compact_schedule_grid.dart';
 import 'package:isimg_app/widgets/schedule_grid.dart';
 
 class _FixedApi implements ApiClient {
@@ -107,9 +108,25 @@ void main() {
 
     expect(find.text('Aucun cours cette semaine'), findsOneWidget);
     expect(find.byType(ScheduleGrid), findsNothing);
+    expect(find.byType(CompactScheduleGrid), findsNothing);
   });
 
-  testWidgets('a week with classes lays out the grid, never the free-week notice',
+  testWidgets('a week with classes defaults to the one-screen grid', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final real = const IsimgParser()
+        .parseSchedule(File('test/fixtures/schedule_populated.html').readAsStringSync());
+    await pumpSchedule(tester, real);
+
+    expect(find.byType(CompactScheduleGrid), findsOneWidget);
+    expect(find.byType(ScheduleGrid), findsNothing);
+    expect(find.text('Aucun cours cette semaine'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the detailed layout lays out the wide grid, never the free-week notice',
       (tester) async {
     tester.view.physicalSize = const Size(2400, 2600);
     tester.view.devicePixelRatio = 1.0;
@@ -117,7 +134,9 @@ void main() {
 
     final real = const IsimgParser()
         .parseSchedule(File('test/fixtures/schedule_populated.html').readAsStringSync());
+    SharedPreferences.setMockInitialValues({'schedule_layout_v1': 'detailed'});
     await pumpSchedule(tester, real);
+    await tester.pumpAndSettle();
 
     expect(find.byType(ScheduleGrid), findsOneWidget);
     expect(find.text('Aucun cours cette semaine'), findsNothing);

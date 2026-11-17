@@ -4,8 +4,10 @@ import '../core/api_exception.dart';
 import '../models/schedule.dart';
 import '../providers/absences_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/schedule_layout_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/compact_schedule_grid.dart';
 import '../widgets/schedule_grid.dart';
 import '../widgets/state_views.dart';
 
@@ -97,7 +99,7 @@ class _ScheduleLoadingPlaceholder extends ConsumerWidget {
   }
 }
 
-class _ScheduleContent extends StatelessWidget {
+class _ScheduleContent extends ConsumerWidget {
   final Schedule schedule;
   final DateTime weekStart;
   final Set<String> absentKeys;
@@ -109,7 +111,7 @@ class _ScheduleContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!schedule.hasSessions) {
       return LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
@@ -128,6 +130,26 @@ class _ScheduleContent extends StatelessWidget {
     }
 
     if (schedule.sessions.isNotEmpty) {
+      if (ref.watch(scheduleLayoutProvider) == ScheduleLayout.compact) {
+        // The week fits the screen; the scroll view only exists so a pull
+        // still refreshes.
+        return LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.sm),
+                child: CompactScheduleGrid(
+                  sessions: schedule.sessions,
+                  weekStart: weekStart,
+                  absentKeys: absentKeys,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
       return ScheduleGrid(
         sessions: schedule.sessions,
         weekStart: weekStart,

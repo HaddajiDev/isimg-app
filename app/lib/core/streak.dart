@@ -4,7 +4,8 @@ import 'dart:math' as math;
 ///
 /// A streak counts *school days* — every weekday except Sunday, which the
 /// institute never schedules. Sundays are skipped: they neither add to a streak
-/// nor break it.
+/// nor break it. Exam days are skipped the same way — there are no regular
+/// classes to attend, so they can't extend or break a streak either.
 class StreakStats {
   /// School days without an absence since the most recent miss, through today.
   final int current;
@@ -31,16 +32,17 @@ class StreakStats {
       StreakStats(current: 0, best: 0, hasAbsences: false, lastAbsence: null);
 }
 
-bool _isSchoolDay(DateTime d) => d.weekday != DateTime.sunday;
+bool _isSchoolDay(DateTime d, Set<DateTime> examDays) =>
+    d.weekday != DateTime.sunday && !examDays.contains(d);
 
 /// School days in the half-open range `(after, through]` — strictly after
-/// [after], up to and including [through], excluding Sundays.
-int _schoolDaysBetween(DateTime after, DateTime through) {
+/// [after], up to and including [through], excluding Sundays and [examDays].
+int _schoolDaysBetween(DateTime after, DateTime through, Set<DateTime> examDays) {
   final end = DateTime(through.year, through.month, through.day);
   var d = DateTime(after.year, after.month, after.day).add(const Duration(days: 1));
   var n = 0;
   while (!d.isAfter(end)) {
-    if (_isSchoolDay(d)) n++;
+    if (_isSchoolDay(d, examDays)) n++;
     d = d.add(const Duration(days: 1));
   }
   return n;
@@ -49,13 +51,19 @@ int _schoolDaysBetween(DateTime after, DateTime through) {
 /// Builds [StreakStats] from a student's absence dates.
 ///
 /// [absenceDates] may contain duplicates and times; only the day part matters.
-/// Future-dated entries (relative to [today]) are ignored.
+/// Future-dated entries (relative to [today]) are ignored. [examDays] are the
+/// exam dates (from the Examens tab); they're skipped like Sundays.
 StreakStats computeAttendanceStreak(
   Iterable<DateTime> absenceDates, {
   DateTime? today,
+  Iterable<DateTime> examDays = const [],
 }) {
   final ref = today ?? DateTime.now();
   final refDay = DateTime(ref.year, ref.month, ref.day);
+
+  final exams = <DateTime>{
+    for (final d in examDays) DateTime(d.year, d.month, d.day),
+  };
 
   final days = <DateTime>{
     for (final d in absenceDates)
@@ -67,13 +75,13 @@ StreakStats computeAttendanceStreak(
   if (days.isEmpty) return StreakStats.empty;
 
   final last = days.last;
-  final current = _schoolDaysBetween(last, refDay);
+  final current = _schoolDaysBetween(last, refDay, exams);
 
   var best = current;
   for (var i = 1; i < days.length; i++) {
     // School days the student attended between two consecutive misses:
     // days strictly between them (the later date is itself an absence).
-    final gap = _schoolDaysBetween(days[i - 1], days[i]) - 1;
+    final gap = _schoolDaysBetween(days[i - 1], days[i], exams) - 1;
     best = math.max(best, gap < 0 ? 0 : gap);
   }
 

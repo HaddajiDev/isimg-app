@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/streak.dart';
 import '../providers/absences_provider.dart';
+import '../providers/exams_provider.dart';
 import '../theme/app_theme.dart';
 
 /// Compact attendance-streak badge for the Absences app bar: a flame + the
@@ -21,7 +22,18 @@ class AbsenceStreakChip extends ConsumerWidget {
     // Absences exist but the server gave no dated list — nothing to count.
     if (!spotless && dates.isEmpty) return const SizedBox.shrink();
 
-    final stats = spotless ? null : computeAttendanceStreak(dates);
+    // Exam days (from the Examens tab) don't count — there are no classes to
+    // attend. Absent here just means not loaded yet; the streak still works.
+    final examDays = ref
+            .watch(examsProvider)
+            .valueOrNull
+            ?.schedule
+            .exams
+            .map((e) => e.day)
+            .whereType<DateTime>() ??
+        const <DateTime>[];
+
+    final stats = spotless ? null : computeAttendanceStreak(dates, examDays: examDays);
     final accent = spotless ? AppColors.green : AppColors.warning;
 
     return Padding(
@@ -122,7 +134,7 @@ class AbsenceStreakChip extends ConsumerWidget {
             ],
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Les dimanches ne comptent pas.',
+              'Les dimanches et les jours d\'examen ne comptent pas.',
               style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
             ),
           ],

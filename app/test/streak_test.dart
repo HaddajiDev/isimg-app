@@ -34,6 +34,27 @@ void main() {
       expect(s.current, 2);
     });
 
+    test('exam days are skipped like Sundays', () {
+      final s = computeAttendanceStreak(
+        [DateTime(2026, 10, 1)],
+        today: DateTime(2026, 10, 9),
+        examDays: [DateTime(2026, 10, 6), DateTime(2026, 10, 8, 14, 0)],
+      );
+      // Oct 2,3,5,7,9 count; Oct 4 (Sun), 6 and 8 (exams) excluded = 5
+      expect(s.current, 5);
+      expect(s.best, 5);
+    });
+
+    test('an exam day between two absences does not count as attended', () {
+      final s = computeAttendanceStreak(
+        [DateTime(2026, 10, 5), DateTime(2026, 10, 7)],
+        today: DateTime(2026, 10, 7),
+        examDays: [DateTime(2026, 10, 6)],
+      );
+      // Only Oct 6 sits between the two misses, and it's an exam → best 0.
+      expect(s.best, 0);
+    });
+
     test('best streak mines historical gaps, not just the current run', () {
       final s = computeAttendanceStreak(
         [DateTime(2026, 10, 1), DateTime(2026, 10, 9)],
