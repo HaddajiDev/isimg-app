@@ -9,6 +9,11 @@ const String kVersionApiUrl = String.fromEnvironment(
   defaultValue: 'https://isimg-app-backend.vercel.app/version',
 );
 
+const String kFeedbackApiUrl = String.fromEnvironment(
+  'FEEDBACK_API',
+  defaultValue: 'https://isimg-app-backend.vercel.app/feedback',
+);
+
 /// Play Store listing opened by the "Mettre à jour" button on the update banner.
 const String kPlayStoreUrl =
     'https://play.google.com/store/apps/details?id=io.github.haddajidev.isimg';

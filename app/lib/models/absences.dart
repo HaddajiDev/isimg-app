@@ -210,6 +210,43 @@ class Absences {
     return out;
   }
 
+  SubjectAbsences forSubject(String name) {
+    final key = _subjectKey(name);
+    bool same(String? other) {
+      if (other == null) return false;
+      final o = _subjectKey(other);
+      if (o.isEmpty || key.isEmpty) return false;
+      if (o == key) return true;
+      final shorter = o.length < key.length ? o : key;
+      return shorter.length >= 5 && (o.contains(key) || key.contains(o));
+    }
+
+    final ordered = [
+      ...[s1, s2].whereType<SemestreAbsences>().where((s) => s.semestre == currentSemestre),
+      ...[s1, s2].whereType<SemestreAbsences>().where((s) => s.semestre != currentSemestre),
+    ];
+
+    MatiereAbsence? stats;
+    for (final sem in ordered) {
+      stats = sem.matieres.where((m) => same(m.module)).firstOrNull;
+      if (stats != null) break;
+    }
+
+    final entries = [
+      for (final sem in ordered)
+        for (final e in sem.entries)
+          if (same(e.module)) e,
+    ]..sort((a, b) {
+        final da = a.day, db = b.day;
+        if (da == null || db == null) return da == null ? (db == null ? 0 : 1) : -1;
+        final byDay = db.compareTo(da);
+        if (byDay != 0) return byDay;
+        return (int.tryParse(a.seance ?? '') ?? 0).compareTo(int.tryParse(b.seance ?? '') ?? 0);
+      });
+
+    return SubjectAbsences(stats: stats, entries: entries, threshold: matiereThreshold);
+  }
+
   factory Absences.fromJson(Map<String, dynamic> j) => Absences(
         currentSemestre: _int(j['current_semestre']),
         s1: j['bilan_s1'] is Map<String, dynamic>
@@ -249,4 +286,34 @@ DateTime? _parseDate(String? raw) {
     }
   }
   return null;
+}
+
+class SubjectAbsences {
+  final MatiereAbsence? stats;
+  final List<AbsenceEntry> entries;
+  final double threshold;
+
+  const SubjectAbsences({required this.stats, required this.entries, required this.threshold});
+
+  bool get isTracked => stats != null || entries.isNotEmpty;
+
+  int get count => stats?.total ?? entries.length;
+}
+
+String _subjectKey(String raw) {
+  const accents = {
+    'à': 'a', 'â': 'a', 'ä': 'a', 'á': 'a',
+    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+    'î': 'i', 'ï': 'i', 'í': 'i',
+    'ô': 'o', 'ö': 'o', 'ó': 'o',
+    'û': 'u', 'ü': 'u', 'ù': 'u', 'ú': 'u',
+    'ç': 'c',
+  };
+  final lower = raw.toLowerCase();
+  final buf = StringBuffer();
+  for (final ch in lower.split('')) {
+    final c = accents[ch] ?? ch;
+    buf.write(RegExp(r'[a-z0-9]').hasMatch(c) ? c : ' ');
+  }
+  return buf.toString().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).join(' ');
 }

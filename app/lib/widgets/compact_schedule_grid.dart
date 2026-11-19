@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/format.dart';
 import '../models/absences.dart';
 import '../models/seance.dart';
+import '../providers/absences_provider.dart';
 import '../theme/app_theme.dart';
 
-bool _isSameDate(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
+bool _isSameDate(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 (int, int)? _parseSlotRange(String slot) {
-  final match =
-      RegExp(r'^(\d{1,2})[:h](\d{2})\s*-\s*(\d{1,2})[:h](\d{2})').firstMatch(slot.trim());
+  final match = RegExp(r'^(\d{1,2})[:h](\d{2})\s*-\s*(\d{1,2})[:h](\d{2})').firstMatch(slot.trim());
   if (match == null) return null;
-  return (
-    int.parse(match[1]!) * 60 + int.parse(match[2]!),
-    int.parse(match[3]!) * 60 + int.parse(match[4]!),
-  );
+  return (int.parse(match[1]!) * 60 + int.parse(match[2]!), int.parse(match[3]!) * 60 + int.parse(match[4]!));
 }
 
 Color _tint(SeanceType type) => switch (type) {
-      SeanceType.cours => AppColors.purple,
-      SeanceType.td => AppColors.green,
-      SeanceType.tp => AppColors.info,
-      SeanceType.autre => AppColors.neutral,
-    };
+  SeanceType.cours => AppColors.purple,
+  SeanceType.td => AppColors.green,
+  SeanceType.tp => AppColors.info,
+  SeanceType.autre => AppColors.neutral,
+};
 
 /// The text drawn in a class cell: type, matière, teacher, room.
 TextSpan _classSpan(BuildContext context, Seance seance, {required bool absent}) {
@@ -34,15 +32,24 @@ TextSpan _classSpan(BuildContext context, Seance seance, {required bool absent})
   return TextSpan(
     children: [
       if (label.isNotEmpty)
-        TextSpan(text: '$label\n', style: TextStyle(color: tint, fontWeight: FontWeight.w800)),
+        TextSpan(
+          text: '$label\n',
+          style: TextStyle(color: tint, fontWeight: FontWeight.w800),
+        ),
       TextSpan(
         text: seance.matiere,
         style: TextStyle(color: context.c.textPrimary, fontWeight: FontWeight.w600),
       ),
       if (seance.enseignant case final teacher?)
-        TextSpan(text: '\n$teacher', style: TextStyle(color: context.c.textSecondary)),
+        TextSpan(
+          text: '\n$teacher',
+          style: TextStyle(color: context.c.textSecondary),
+        ),
       if (seance.salle case final room?)
-        TextSpan(text: '\n@$room', style: TextStyle(color: tint, fontWeight: FontWeight.w700)),
+        TextSpan(
+          text: '\n@$room',
+          style: TextStyle(color: tint, fontWeight: FontWeight.w700),
+        ),
     ],
   );
 }
@@ -62,7 +69,10 @@ double _fitSize(
 }) {
   for (var size = cap; size > _minFont; size -= 0.5) {
     final painter = TextPainter(
-      text: TextSpan(style: base.copyWith(fontSize: size, height: _lineHeight), children: [span]),
+      text: TextSpan(
+        style: base.copyWith(fontSize: size, height: _lineHeight),
+        children: [span],
+      ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
       textScaler: scaler,
@@ -135,16 +145,15 @@ class CompactScheduleGrid extends StatelessWidget {
         final scaler = MediaQuery.textScalerOf(context);
         final textWidth =
             (box.maxWidth - 2 - _slotColumnWidth) / weekdays.length - border.width - 2 * _cellPadH;
-        final textHeight =
-            (box.maxHeight - 2 - _headerHeight) / slots.length - border.width - 2 * _cellPadV;
+        final textHeight = (box.maxHeight - 2 - _headerHeight) / slots.length - border.width - 2 * _cellPadV;
         var shared = _maxFont;
         for (final seance in sessions) {
           if (sessions.where((o) => o.weekday == seance.weekday && o.slot == seance.slot).length > 1) {
             continue;
           }
           final date = weekStart.add(Duration(days: seance.weekday - 1));
-          final absent = seance.seanceIndex > 0 &&
-              absentKeys.contains(Absences.slotKey(date, seance.seanceIndex));
+          final absent =
+              seance.seanceIndex > 0 && absentKeys.contains(Absences.slotKey(date, seance.seanceIndex));
           shared = _fitSize(
             _classSpan(context, seance, absent: absent),
             base,
@@ -190,10 +199,10 @@ class CompactScheduleGrid extends StatelessWidget {
                   child: Text(
                     'Séance',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: context.c.textSecondary,
-                        ),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: context.c.textSecondary,
+                    ),
                   ),
                 ),
                 for (final weekday in weekdays)
@@ -247,14 +256,14 @@ class _HeaderCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: width,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: context.c.surfaceRaised,
-          border: Border(right: border, bottom: border),
-        ),
-        child: child,
-      );
+    width: width,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: context.c.surfaceRaised,
+      border: Border(right: border, bottom: border),
+    ),
+    child: child,
+  );
 }
 
 class _DayHeader extends StatelessWidget {
@@ -263,12 +272,7 @@ class _DayHeader extends StatelessWidget {
   final bool isToday;
   final BorderSide border;
 
-  const _DayHeader({
-    required this.name,
-    required this.date,
-    required this.isToday,
-    required this.border,
-  });
+  const _DayHeader({required this.name, required this.date, required this.isToday, required this.border});
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +289,10 @@ class _DayHeader extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(name, style: style?.copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+            Text(
+              name,
+              style: style?.copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+            ),
             Text(
               '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}',
               style: style?.copyWith(
@@ -327,12 +334,12 @@ class _SlotCell extends StatelessWidget {
               Text(
                 part.trim(),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 10,
-                      height: 1.25,
-                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                      color: color,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+                  fontSize: 10,
+                  height: 1.25,
+                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
           ],
         ),
@@ -360,8 +367,7 @@ class _Cell extends StatelessWidget {
     required this.fontSize,
   });
 
-  bool _isAbsent(Seance s) =>
-      s.seanceIndex > 0 && absentKeys.contains(Absences.slotKey(date, s.seanceIndex));
+  bool _isAbsent(Seance s) => s.seanceIndex > 0 && absentKeys.contains(Absences.slotKey(date, s.seanceIndex));
 
   @override
   Widget build(BuildContext context) {
@@ -410,9 +416,7 @@ class _ClassBlock extends StatelessWidget {
 
     return Material(
       color: tint.withValues(alpha: absent ? 0.20 : 0.15),
-      shape: isNow
-          ? RoundedRectangleBorder(side: BorderSide(color: tint, width: 1.5))
-          : null,
+      shape: isNow ? RoundedRectangleBorder(side: BorderSide(color: tint, width: 1.5)) : null,
       child: InkWell(
         onTap: () => _showDetails(context, tint),
         child: Padding(
@@ -420,7 +424,10 @@ class _ClassBlock extends StatelessWidget {
             horizontal: CompactScheduleGrid._cellPadH,
             vertical: CompactScheduleGrid._cellPadV,
           ),
-          child: _FitText(span: _classSpan(context, seance, absent: absent), cap: fontSize),
+          child: _FitText(
+            span: _classSpan(context, seance, absent: absent),
+            cap: fontSize,
+          ),
         ),
       ),
     );
@@ -434,38 +441,174 @@ class _ClassBlock extends StatelessWidget {
       context: context,
       backgroundColor: context.c.surfaceRaised,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: AppSpacing.sm,
-                children: [
-                  if (seance.type.label.isNotEmpty) _Badge(seance.type.label, _tint(seance.type)),
-                  if (absent) const _Badge('Absent', AppColors.danger),
-                  if (seance.rattrapage) const _Badge('Rattrapage', AppColors.warning),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(seance.matiere, style: theme.textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              _DetailRow(
-                Icons.schedule_rounded,
-                '${days[seance.weekday - 1]} ${date.day.toString().padLeft(2, '0')}/'
-                '${date.month.toString().padLeft(2, '0')} · ${seance.slot.replaceAll('-', ' – ')}',
-              ),
-              if (seance.enseignant case final teacher?)
-                _DetailRow(Icons.person_outline_rounded, teacher),
-              if (seance.salle case final room?) _DetailRow(Icons.meeting_room_outlined, room),
-            ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    if (seance.type.label.isNotEmpty) _Badge(seance.type.label, _tint(seance.type)),
+                    if (absent) const _Badge('Absent', AppColors.danger),
+                    if (seance.rattrapage) const _Badge('Rattrapage', AppColors.warning),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(seance.matiere, style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                _DetailRow(
+                  Icons.schedule_rounded,
+                  '${days[seance.weekday - 1]} ${date.day.toString().padLeft(2, '0')}/'
+                  '${date.month.toString().padLeft(2, '0')} · ${seance.slot.replaceAll('-', ' – ')}',
+                ),
+                if (seance.enseignant case final teacher?) _DetailRow(Icons.person_outline_rounded, teacher),
+                if (seance.salle case final room?) _DetailRow(Icons.meeting_room_outlined, room),
+                const SizedBox(height: AppSpacing.sm),
+                const Divider(),
+                const SizedBox(height: AppSpacing.sm),
+                _SubjectAbsencesSection(matiere: seance.matiere),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _SubjectAbsencesSection extends ConsumerWidget {
+  final String matiere;
+
+  const _SubjectAbsencesSection({required this.matiere});
+
+  static const _days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final async = ref.watch(absencesProvider);
+    final absences = async.valueOrNull?.absences;
+
+    Widget note(String text) =>
+        Text(text, style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textMuted));
+
+    final title = Text('Absences dans cette matière', style: theme.textTheme.titleSmall);
+
+    if (absences == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: AppSpacing.sm),
+          if (async.isLoading)
+            const LinearProgressIndicator(minHeight: 2, color: AppColors.purple)
+          else
+            note('Les absences ne sont pas disponibles pour le moment.'),
+        ],
+      );
+    }
+
+    final subject = absences.forSubject(matiere);
+    if (!subject.isTracked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: AppSpacing.sm),
+          note("Cette matière n'apparaît pas dans le suivi des absences."),
+        ],
+      );
+    }
+
+    final stats = subject.stats;
+    final taux = stats?.taux;
+    final eliminated = stats?.eliminated ?? false;
+    final color = eliminated || (taux ?? 0) >= subject.threshold
+        ? AppColors.danger
+        : subject.count == 0
+        ? AppColors.green
+        : (taux ?? 0) >= subject.threshold * 0.66
+        ? AppColors.warning
+        : AppColors.info;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        title,
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              '${subject.count}',
+              style: theme.textTheme.headlineSmall?.copyWith(color: color, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              subject.count > 1 ? 'absences' : 'absence',
+              style: theme.textTheme.bodyMedium?.copyWith(color: context.c.textSecondary),
+            ),
+            const Spacer(),
+            if (taux != null)
+              Text(
+                '${_pct(taux)} %',
+                style: theme.textTheme.bodySmall?.copyWith(color: color, fontWeight: FontWeight.w600),
+              ),
+          ],
+        ),
+        if (eliminated) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _Badge(stats?.elimineLabel ?? 'Éliminé', AppColors.danger),
+        ],
+        if (stats != null && stats.parType.any((t) => t.nbre > 0)) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final t in stats.parType)
+                if (t.nbre > 0) _Badge('${t.nbre} ${t.type}', context.c.textSecondary),
+            ],
+          ),
+        ],
+        if (subject.entries.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          for (final e in subject.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Icon(Icons.event_busy_rounded, size: 16, color: color),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      [
+                        if (e.day case final d?) '${_days[d.weekday - 1]} ${frDate(d)}' else 'Date inconnue',
+                        if (e.seance != null) 'Séance ${e.seance}',
+                        if (e.type != null) e.type!,
+                      ].join(' · '),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ] else if (subject.count == 0) ...[
+          const SizedBox(height: AppSpacing.xs),
+          note('Aucune absence dans cette matière.'),
+        ],
+      ],
+    );
+  }
+
+  static String _pct(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
 }
 
 class _Badge extends StatelessWidget {
@@ -476,20 +619,17 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
-        ),
-        child: Text(
-          text,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: color.withValues(alpha: 0.4)),
+    ),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color, fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 class _DetailRow extends StatelessWidget {
@@ -500,15 +640,15 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: context.c.textMuted),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: context.c.textMuted),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
+      ],
+    ),
+  );
 }
 
 /// Centered, wrapping text at the largest size up to [cap] that fits its box.
@@ -525,12 +665,14 @@ class _FitText extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, box) {
-        final size = _fitSize(span, base, scaler,
-            width: box.maxWidth, height: box.maxHeight, cap: cap);
+        final size = _fitSize(span, base, scaler, width: box.maxWidth, height: box.maxHeight, cap: cap);
         return ClipRect(
           child: Center(
             child: Text.rich(
-              TextSpan(style: base.copyWith(fontSize: size, height: _lineHeight), children: [span]),
+              TextSpan(
+                style: base.copyWith(fontSize: size, height: _lineHeight),
+                children: [span],
+              ),
               textAlign: TextAlign.center,
               textScaler: scaler,
             ),

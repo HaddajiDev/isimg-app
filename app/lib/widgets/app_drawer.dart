@@ -6,6 +6,7 @@ import '../providers/theme_provider.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/demandes_screen.dart';
 import '../screens/etudiant_screen.dart';
+import '../screens/feedback_screen.dart';
 import '../screens/pfe_screen.dart';
 import '../screens/plan_etudes_screen.dart';
 import '../screens/stage_screen.dart';
@@ -108,6 +109,13 @@ class AppDrawer extends ConsumerWidget {
                     label: 'Demandes administratives',
                     value: 'Attestations et documents',
                     onTap: () => _go(context, const DemandesScreen()),
+                  ),
+                  const Divider(indent: AppSpacing.lg, endIndent: AppSpacing.lg),
+                  _DrawerButton(
+                    icon: Icons.feedback_outlined,
+                    label: 'Feedback',
+                    value: 'Bug, idée ou remarque',
+                    onTap: () => _go(context, const FeedbackScreen()),
                   ),
                 ],
               ),
