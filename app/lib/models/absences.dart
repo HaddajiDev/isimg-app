@@ -211,20 +211,21 @@ class Absences {
   }
 
   SubjectAbsences forSubject(String name) {
-    final key = _subjectKey(name);
-    bool same(String? other) {
-      if (other == null) return false;
-      final o = _subjectKey(other);
-      if (o.isEmpty || key.isEmpty) return false;
-      if (o == key) return true;
-      final shorter = o.length < key.length ? o : key;
-      return shorter.length >= 5 && (o.contains(key) || key.contains(o));
-    }
-
     final ordered = [
       ...[s1, s2].whereType<SemestreAbsences>().where((s) => s.semestre == currentSemestre),
       ...[s1, s2].whereType<SemestreAbsences>().where((s) => s.semestre != currentSemestre),
     ];
+
+    final candidates = <String>{
+      for (final sem in ordered) ...[
+        for (final m in sem.matieres) _subjectKey(m.module),
+        for (final e in sem.entries)
+          if (e.module != null) _subjectKey(e.module!),
+      ],
+    }..remove('');
+    final match = _bestSubjectMatch(_subjectKey(name), candidates);
+
+    bool same(String? other) => match != null && other != null && _subjectKey(other) == match;
 
     MatiereAbsence? stats;
     for (final sem in ordered) {
@@ -311,9 +312,64 @@ String _subjectKey(String raw) {
   };
   final lower = raw.toLowerCase();
   final buf = StringBuffer();
+  String? previous;
   for (final ch in lower.split('')) {
     final c = accents[ch] ?? ch;
-    buf.write(RegExp(r'[a-z0-9]').hasMatch(c) ? c : ' ');
+    final isLetter = RegExp(r'[a-z]').hasMatch(c);
+    final isDigit = RegExp(r'[0-9]').hasMatch(c);
+    if (!isLetter && !isDigit) {
+      buf.write(' ');
+      previous = null;
+      continue;
+    }
+    final kind = isLetter ? 'a' : '0';
+    if (previous != null && previous != kind) buf.write(' ');
+    buf.write(c);
+    previous = kind;
   }
   return buf.toString().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).join(' ');
+}
+
+const _stopWords = {
+  'a', 'au', 'aux', 'd', 'de', 'des', 'du', 'en', 'et', 'l', 'la', 'le', 'les', 'pour', 'sur',
+};
+
+int _subjectScore(String short, String official) {
+  if (short == official) return 3;
+  final shortWords = short.split(' ');
+  final officialWords = official.split(' ').toSet();
+  if (shortWords.every(officialWords.contains)) return 2;
+  if (shortWords.length == 1 && short.length >= 2 && short.length <= 5) {
+    final initials = official
+        .split(' ')
+        .where((w) => !_stopWords.contains(w) && RegExp(r'^[a-z]').hasMatch(w))
+        .map((w) => w[0])
+        .join();
+    if (initials == short) return 2;
+  }
+  return 0;
+}
+
+String? _bestSubjectMatch(String short, Set<String> candidates) {
+  if (short.isEmpty) return null;
+  var words = short.split(' ');
+  while (words.isNotEmpty) {
+    final key = words.join(' ');
+    var best = 0;
+    final winners = <String>[];
+    for (final c in candidates) {
+      final score = _subjectScore(key, c);
+      if (score == 0 || score < best) continue;
+      if (score > best) {
+        best = score;
+        winners.clear();
+      }
+      winners.add(c);
+    }
+    if (winners.length == 1) return winners.single;
+    if (winners.length > 1) return null;
+    words = words.sublist(0, words.length - 1);
+    if (words.join(' ').length < 5) return null;
+  }
+  return null;
 }

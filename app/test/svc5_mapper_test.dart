@@ -44,6 +44,13 @@ void main() {
       expect(s.salle, 'Lab12');
     });
 
+    test('a teacher surname with a particle keeps all three words', () {
+      final s = cell({'jour': 1, 'seance': '3', 'type': '0', 'rattrapagede': '0', 'texte': 'Cours Préparation Karim Ben Belgacem @A1'});
+      expect(s.matiere, 'Préparation');
+      expect(s.enseignant, 'Karim Ben Belgacem');
+      expect(s.salle, 'A1');
+    });
+
     test('subject with an apostrophe still splits correctly', () {
       final s = cell({'jour': 5, 'seance': '3', 'type': '0', 'rattrapagede': '0', 'texte': "Cours Création d'entreprise Rim Kamel @A1"});
       expect(s.matiere, "Création d'entreprise");

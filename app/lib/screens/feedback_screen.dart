@@ -170,7 +170,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       Text('Note de l\'application', style: theme.textTheme.titleSmall),
                       const SizedBox(width: AppSpacing.xs),
                       Text(
-                        '(facultatif)',
+                        '(optional)',
                         style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                       ),
                     ],
@@ -198,7 +198,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       Text('Contact', style: theme.textTheme.titleSmall),
                       const SizedBox(width: AppSpacing.xs),
                       Text(
-                        '(facultatif)',
+                        '(optional)',
                         style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                       ),
                     ],
@@ -209,10 +209,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     enabled: !_sending,
                     maxLength: 100,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      hintText: 'E-mail ou @telegram, si vous voulez une réponse',
-                      counterText: '',
-                    ),
+                    decoration: const InputDecoration(counterText: ''),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'E-mail ou numéro WhatsApp, si vous voulez une réponse',
+                    style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Row(
@@ -220,7 +222,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       Text('Captures', style: theme.textTheme.titleSmall),
                       const SizedBox(width: AppSpacing.xs),
                       Text(
-                        '(facultatif, ${FeedbackClient.maxImages} max)',
+                        '(optional, ${FeedbackClient.maxImages} max)',
                         style: theme.textTheme.bodySmall?.copyWith(color: context.c.textMuted),
                       ),
                     ],

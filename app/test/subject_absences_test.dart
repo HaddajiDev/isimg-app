@@ -49,8 +49,57 @@ void main() {
     expect(s.entries, isEmpty);
   });
 
-  test('an unknown or too-short name is not matched by accident', () {
+  test('an unknown name is not matched by accident', () {
     expect(absences.forSubject('Maillage').isTracked, isFalse);
-    expect(absences.forSubject('Big').isTracked, isFalse);
+    expect(absences.forSubject('Data Mining').isTracked, isFalse);
+  });
+
+  group('timetable short names against official module names', () {
+    const official = [
+      'Anglais 5',
+      'Architecture soa et service web',
+      "Développement d'applications web et multimédia(J2EE, .NET..)",
+      'Entreprenariat',
+      'Framework & technologies big data',
+      'Machine Learning',
+      'Maillage 2D-3D',
+      "Préparation à l'environnement professionnel",
+      'Réalité virtuelle et réalité augmentée',
+      'Sécurité web',
+      "Techniques d'indexation et de référencement",
+      'Virtualisation et cloud',
+    ];
+    final real = Absences(
+      currentSemestre: 1,
+      s1: SemestreAbsences(
+        semestre: 1,
+        matieres: [for (final m in official) MatiereAbsence(module: m, taux: 0)],
+      ),
+    );
+
+    String? matched(String short) => real.forSubject(short).stats?.module;
+
+    test('every subject on the week resolves to its module', () {
+      expect(matched('ML'), 'Machine Learning');
+      expect(matched('SOA'), 'Architecture soa et service web');
+      expect(matched('J2EE'), "Développement d'applications web et multimédia(J2EE, .NET..)");
+      expect(matched('Anglais5'), 'Anglais 5');
+      expect(matched('Préparation'), "Préparation à l'environnement professionnel");
+      expect(matched('Indexation'), "Techniques d'indexation et de référencement");
+      expect(matched('Maillage'), 'Maillage 2D-3D');
+      expect(matched('Big Data'), 'Framework & technologies big data');
+      expect(matched('Virtualisation'), 'Virtualisation et cloud');
+      expect(matched('Virtuelle'), 'Réalité virtuelle et réalité augmentée');
+      expect(matched('Sécurité web'), 'Sécurité web');
+      expect(matched('Entreprenariat'), 'Entreprenariat');
+    });
+
+    test('a leftover teacher word does not block the match', () {
+      expect(matched('Préparation Karim'), "Préparation à l'environnement professionnel");
+    });
+
+    test('an ambiguous name matches nothing rather than guessing', () {
+      expect(matched('Web'), isNull);
+    });
   });
 }

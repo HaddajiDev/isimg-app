@@ -34,6 +34,8 @@ class Svc5Mapper {
         _ => SeanceType.autre,
       };
 
+  static const _surnameParticles = {'ben', 'bel', 'el', 'bou', 'ibn', 'abd'};
+
   static Seance mapCell(Map<String, dynamic> cell, List<String> slots) {
     final weekday = _num(cell['jour'])?.toInt() ?? 1;
     final slotIndex = _num(cell['seance'])?.toInt() ?? 0;
@@ -60,8 +62,11 @@ class Svc5Mapper {
     String? enseignant;
     final tokens = text.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
     if (tokens.length >= 3) {
-      enseignant = tokens.sublist(tokens.length - 2).join(' ');
-      matiere = tokens.sublist(0, tokens.length - 2).join(' ');
+      final particle = tokens.length >= 4 &&
+          _surnameParticles.contains(tokens[tokens.length - 2].toLowerCase());
+      final nameLength = particle ? 3 : 2;
+      enseignant = tokens.sublist(tokens.length - nameLength).join(' ');
+      matiere = tokens.sublist(0, tokens.length - nameLength).join(' ');
     }
 
     return Seance(
